@@ -2,4 +2,14 @@
 
 ```shell
 python3 -m venv venv
+
+pip install ipython
+```
+
+## Streamlit
+
+- https://docs.streamlit.io/develop/quick-reference/cheat-sheet
+
+```shell
+pip install streamlit
 ```
