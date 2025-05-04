@@ -13,3 +13,11 @@ pip install ipython
 ```shell
 pip install streamlit
 ```
+
+## Pandas
+
+- https://pandas.pydata.org/docs/user_guide/index.html
+
+```shell
+pip install pandas
+```
