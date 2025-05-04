@@ -21,3 +21,12 @@ pip install streamlit
 ```shell
 pip install pandas
 ```
+
+## LangChain
+
+- https://python.langchain.com/docs/introduction/
+
+```shell
+pip install langchain
+pip install langchain-openai
+```
