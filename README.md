@@ -30,3 +30,7 @@ pip install pandas
 pip install langchain
 pip install langchain-openai
 ```
+
+## Prompt
+
+- https://github.com/f/awesome-chatgpt-prompts

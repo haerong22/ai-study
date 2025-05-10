@@ -1,0 +1,10 @@
+yfinance
+langchain
+langchain-openai
+ipython
+streamlit
+meilisearch
+python-dotenv
+matplotlib
+# https://github.com/astanin/python-tabulate
+tabulate
