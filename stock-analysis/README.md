@@ -1,5 +1,9 @@
 ## 주식시장 분석 서비스
 
+### yfinance
+
+- https://github.com/ranaroussi/yfinance
+
 ### 프롬프트 엔지니어링
 
 - https://github.com/f/awesome-chatgpt-prompts
