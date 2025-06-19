@@ -1,4 +1,6 @@
 python-dotenv
 langchain
+langchain-community
 langchain-openai
 slack_bolt
+langchain-pinecone
