@@ -4,9 +4,14 @@ from dotenv import load_dotenv
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 
+from backend import onboard
+
 load_dotenv()
 
 app = App(token=os.getenv("SLACK_BOT_TOKEN"))
+
+def apply_slack_mrkdwn(markdown):
+    return markdown.replace('**', '*')
 
 @app.event("team_join")
 def ask_for_introduction(event, say):
@@ -26,6 +31,8 @@ def is_im_message(event):
 }, matchers=[is_im_message])
 def message_im_event(event, say):
     print(event)
+    gpt_response = onboard().invoke(event['text'])
+    say(apply_slack_mrkdwn(gpt_response), mrkdwn=True)
 
 
 @app.event(event={
@@ -34,6 +41,8 @@ def message_im_event(event, say):
 }, matchers=[is_im_message])
 def message_im_change_event(event, say):
     print(event)
+    gpt_response = onboard().invoke(event['message']['text'])
+    say(apply_slack_mrkdwn(gpt_response), mrkdwn=True)
 
 @app.event("message")
 def handle_message(event, say):
