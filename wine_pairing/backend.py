@@ -7,6 +7,8 @@ from langchain_core.runnables import RunnableLambda
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 
+from retrieval import wine_search
+
 load_dotenv()
 
 llm = ChatOpenAI(
@@ -38,7 +40,7 @@ def recommend_wine(x):
     ])
     return prompt | llm | StrOutputParser()
 
-def recommend_food(query: str, image_urls: list = None):
+def recommend_food(x):
     with open('system_prompt_1.md') as f:
         system_prompt = f.read()
 
@@ -48,18 +50,22 @@ def recommend_food(query: str, image_urls: list = None):
     ])
 
     template = []
-    if image_urls:
-        template += [{'image_url': {'url': image_url}} for image_url in image_urls]
-    template += [{'text': query}]
+    if x['image_urls']:
+        template += [{'image_url': {'url': image_url}} for image_url in x['image_urls']]
+    template += [{'text': x['query']}]
     prompt += HumanMessagePromptTemplate.from_template(template=template)
 
     return prompt | llm | StrOutputParser()
 
 def wine_retrieval(taste):
-    return {'food': taste, 'reviews': 'this is a wine review.'}
+    return {'food': taste, 'reviews': '\n'.join(d.page_content for d in wine_search(taste))}
+
 
 def chain_recommend_wine():
     return RunnableLambda(taste_food) | RunnableLambda(wine_retrieval) | RunnableLambda(recommend_wine)
+
+def chain_recommend_food():
+    return RunnableLambda(recommend_food)
 
 if __name__ == '__main__':
     response = chain_recommend_wine().invoke({
