@@ -21,4 +21,6 @@ Want assistance provided by qualified individuals enabled with experience on und
 
 ```shell
 curl -L https://install.meilisearch.com | sh
+
+./meilisearch --master-key="aSampleMasterKey"
 ```
