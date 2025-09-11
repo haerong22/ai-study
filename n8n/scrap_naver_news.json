@@ -1,0 +1,551 @@
+{
+  "name": "네이버 뉴스 스크랩",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://s.search.naver.com/p/newssearch/3/api/tab/more?cluster_rank=31&de=&ds=&eid=&field=0&force_original=&is_dts=0&is_sug_officeid=0&mynews=0&news_office_checked=&nlu_query=&nqx_theme=%7B%22theme%22%3A%7B%22main%22%3A%7B%22name%22%3A%22corporation_hq%22%2C%22source%22%3A%22NLU%22%7D%2C%22sub%22%3A%5B%7B%22name%22%3A%22site%22%7D%5D%7D%7D&nso=so%3Ar%2Cp%3Aall%2Ca%3Aall&nx_and_query=&nx_search_hlquery=&nx_search_query=&nx_sub_query=&office_category=&office_section_code=0&office_type=0&pd=-1&photo=0&query=%EC%95%A0%ED%94%8C&query_original=&rev=0&service_area=&sm=tab_smr&sort=0&spq=0&ssc=tab.news.all&start=1",
+        "options": {
+          "pagination": {
+            "pagination": {
+              "paginationMode": "responseContainsNextURL",
+              "nextURL": "={{ $response.body['url'] }}",
+              "limitPagesFetched": true,
+              "maxRequests": 1,
+              "requestInterval": 500
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        208,
+        128
+      ],
+      "id": "74af2e3f-7c3a-4e58-b645-23db54660b35",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -16,
+        128
+      ],
+      "id": "fc73c239-e502-4263-9604-3a3575feb516",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        432,
+        128
+      ],
+      "id": "bfd46551-45dc-4b58-8a92-2a6ae63288d0",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "dataPropertyName": "collection[0].html",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "title",
+              "cssSelector": ".sds-comps-text-type-headline1",
+              "returnArray": true
+            },
+            {
+              "key": "url",
+              "cssSelector": ".Pf64BEUwO4elqnCo0_kt:has(.sds-comps-text-type-headline1)",
+              "returnValue": "attribute",
+              "attribute": "href",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        656,
+        64
+      ],
+      "id": "aebfa9d2-a27e-46f1-9bfd-cba04f15c1bb",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "jsCode": "const titles = $input.first().json.title;\nconst urls = $input.first().json.url;\n\nconst totalLengh = titles.length;\n\nconst newsList = [];\n\nfor (let i=0; i< totalLengh; i++) {\n  newsList.push({\n    'title': titles[i],\n    'url': urls[i],\n  })\n}\n\nreturn newsList;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        64
+      ],
+      "id": "f363e867-e5a9-47b7-a19b-5e9b08a5a675",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1104,
+        128
+      ],
+      "id": "3d18ec4a-9f07-4692-9e02-858faa57e1a3",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1328,
+        0
+      ],
+      "id": "e6dff2e5-f225-4486-9d2e-85d8f1bae375",
+      "name": "HTTP Request1",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "content",
+              "cssSelector": "body"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        1552,
+        0
+      ],
+      "id": "ebdb8215-649e-48b6-9c93-af21fd4f56c6",
+      "name": "HTML1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2368,
+        224
+      ],
+      "id": "35803eef-f6fa-4484-97dd-49ccd2b3dc04",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "UAWpNwMCLySTsnwy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1792,
+        224
+      ],
+      "id": "5864418f-65fb-4fbb-8ba8-47f465697cab",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "UAWpNwMCLySTsnwy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the news article below and determine where it is related to company Apple\n\nNews Article:\n{{ $json.content }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Your job is to determine whether a news article from the user is related to Apple, which is the company that I work for. If you fail to identify whether it matters to the executives or not, I might get fired."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1776,
+        0
+      ],
+      "id": "0f796488-57fb-46b2-8414-7aff80502888",
+      "name": "연관성 확인"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"relevant\": {\n\t\t\t\"type\": \"boolean\"\n\t\t}\n\t}\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1920,
+        224
+      ],
+      "id": "4f37a762-cb94-4865-ac27-dd1c94d29bd5",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7b2d7925-40c9-4934-b8eb-867923bb3c07",
+              "leftValue": "={{ $json.output.relevant }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        2128,
+        0
+      ],
+      "id": "c3073c7a-fe2a-4a6f-8c94-22992b782f3d",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"sentiment\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n        \"title\": {\n  \t\t\t\"type\": \"string\"\n  \t\t},\n        \"summary\": {\n  \t\t\t\"type\": \"string\"\n  \t\t},\n        \"url\": {\n  \t\t\t\"type\": \"string\"\n  \t\t}\n\t}\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2496,
+        224
+      ],
+      "id": "654e4518-9af5-4b06-866a-7633846514be",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=아래 뉴스기사가 긍정(positive)인지, 부정(negative)인지, 중립(neutral)인지 판단해서, 영어로 리턴해주세요. 그리고 기사의 내용도 4-5문장으로 한글로 요약해주세요.\n\n뉴스기사 정보\n제목:  {{ $('Code').item.json.title }}\n기사 내용: {{ $('HTML1').item.json.content }}\n기사 링크: {{ $('Code').item.json.url }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Analyze the news article from the user and determine whether it is positive, negative, or neutral. and then summarize the news article."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        2352,
+        0
+      ],
+      "id": "a0b93281-6210-4314-94af-6c581bcdb4e0",
+      "name": "뉴스 감정 분석 & 요약"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "26bfc9ac-714c-8074-919b-feeb1bc2c82d",
+          "mode": "list",
+          "cachedResultName": "기사 목록",
+          "cachedResultUrl": "https://www.notion.so/26bfc9ac714c8074919bfeeb1bc2c82d"
+        },
+        "title": "={{ $json.output.title }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "감정|rich_text",
+              "textContent": "={{ $json.output.sentiment }}"
+            },
+            {
+              "key": "요약|rich_text",
+              "textContent": "={{ $json.output.summary }}"
+            },
+            {
+              "key": "URL|url",
+              "urlValue": "={{ $json.output.url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        2704,
+        128
+      ],
+      "id": "961aa3d6-1bab-4380-9203-01d6da74fed8",
+      "name": "Create a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "riWmiB2fSzBQlCcO",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "HTML1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML1": {
+      "main": [
+        [
+          {
+            "node": "연관성 확인",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "뉴스 감정 분석 & 요약",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "연관성 확인",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "연관성 확인": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "연관성 확인",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "뉴스 감정 분석 & 요약",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "뉴스 감정 분석 & 요약",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "뉴스 감정 분석 & 요약": {
+      "main": [
+        [
+          {
+            "node": "Create a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a database page": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b4301f48-6339-4806-9d59-5d0272432ea2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "58539c9ed2495393c7d57a5cf3bb4571c2152ab782e2d8382c9e454ab731b748"
+  },
+  "id": "XCjiC0qlnolXsZgH",
+  "tags": []
+}
