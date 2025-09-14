@@ -1,14 +1,11 @@
 {
-  "name": "My workflow",
+  "name": "구글 드라이브 파일 다운로드",
   "nodes": [
     {
       "parameters": {},
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [
-        0,
-        144
-      ],
+      "position": [0, 216],
       "id": "9bf81460-1d39-4518-885c-d27f123b26c9",
       "name": "When clicking ‘Execute workflow’"
     },
@@ -32,10 +29,7 @@
       },
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
-      "position": [
-        224,
-        144
-      ],
+      "position": [224, 216],
       "id": "b334872a-1398-4396-a9de-50cab9d1e3c7",
       "name": "Get row(s) in sheet",
       "credentials": {
@@ -51,10 +45,7 @@
       },
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [
-        448,
-        144
-      ],
+      "position": [448, 216],
       "id": "58977aac-69e1-4778-9983-5e3214486a0e",
       "name": "Loop Over Items"
     },
@@ -70,10 +61,7 @@
       },
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
-      "position": [
-        672,
-        144
-      ],
+      "position": [672, 144],
       "id": "c5e0063f-641d-4ea1-bb27-c06bd48b33fc",
       "name": "Download file",
       "credentials": {
@@ -96,10 +84,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
       "typeVersion": 1.3,
-      "position": [
-        928,
-        144
-      ],
+      "position": [928, 216],
       "id": "a53bff0f-d6ed-4aef-abc2-76d5a39a5e34",
       "name": "Pinecone Vector Store",
       "credentials": {
@@ -116,10 +101,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
       "typeVersion": 1.2,
-      "position": [
-        896,
-        368
-      ],
+      "position": [896, 440],
       "id": "d4015fdb-203a-4f57-9978-118f597d9418",
       "name": "Embeddings OpenAI",
       "credentials": {
@@ -137,10 +119,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
       "typeVersion": 1.1,
-      "position": [
-        1024,
-        368
-      ],
+      "position": [1024, 440],
       "id": "cdbd14fd-1bc4-4dc6-90f1-91e42bcf1355",
       "name": "Default Data Loader"
     },
@@ -152,10 +131,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
       "typeVersion": 1,
-      "position": [
-        1104,
-        576
-      ],
+      "position": [1104, 648],
       "id": "fd1866e0-440e-42d5-9656-402d3e287ea2",
       "name": "Recursive Character Text Splitter"
     }
@@ -239,13 +215,24 @@
           }
         ]
       ]
+    },
+    "Pinecone Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "9d36852b-d920-4f22-b3c8-47869cc74a8d",
+  "versionId": "2382009a-3cc1-4216-8eda-53154d8bb741",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "58539c9ed2495393c7d57a5cf3bb4571c2152ab782e2d8382c9e454ab731b748"
