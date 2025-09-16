@@ -1,4 +1,4 @@
-import zerox
+from pyzerox import zerox
 import os
 import asyncio
 from dotenv import load_dotenv
