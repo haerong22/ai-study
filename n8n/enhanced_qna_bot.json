@@ -1,0 +1,242 @@
+{
+  "name": "enhanced_qna_bot",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5a4852d4-cbc7-4669-ae53-ddd8462e1b68",
+      "name": "When chat message received",
+      "webhookId": "c88a1e3a-a3d1-4932-986b-1f0a086614dd"
+    },
+    {
+      "parameters": {
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a helpful assistant that determines the most relevant document name based on the user's question.  Choose from the following document names: \n- delegation_of_authority \n- employee_benefits_and_welfare_faq \n- employee_benefits_and_welfare_guide \n- employee_handbook_and_hr_policy \n- expense_management_guide \n- it_support_guide \n- legal_and_compliance_policy  \n\nReturn ONLY the document name (e.g., 'it_support_guide').  \n\nExamples: \n- If the question is about who can approve expenses, return 'delegation_of_authority' or 'expense_management_guide' as appropriate. \n- If the question is about employee benefits, return 'employee_benefits_and_welfare_guide'. \n- If the question is about HR policies or the employee handbook, return 'employee_handbook_and_hr_policy'. \n- If the question is about IT support or technical issues, return 'it_support_guide'. \n- If the question is about legal or compliance matters, return 'legal_and_compliance_policy'. \n- If the question is a frequently asked question about benefits, return 'employee_benefits_and_welfare_faq'."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "a992111d-bfdb-408c-82ed-7245635e8672",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini-2025-04-14",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini-2025-04-14"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        224
+      ],
+      "id": "ac8d7bc2-f82b-496a-a87f-1b017169c357",
+      "name": "OpenAI Chat Model"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"document\": {\n\t\t\t\"type\": \"string\"\n\t\t}\n\t}\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        368,
+        224
+      ],
+      "id": "52d98549-cee2-40aa-8b4c-fafb90cba984",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-large",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        784,
+        432
+      ],
+      "id": "02ea9ea3-6c08-4075-835d-ebe19dde04ad",
+      "name": "Embeddings OpenAI"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('When chat message received').item.json.chatInput }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        608,
+        0
+      ],
+      "id": "f5ff47be-119a-46de-a5af-b777725894b2",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "company_knowledge_base",
+        "toolDescription": "Retrieve a list of documents that are relevant to the user's question by filtering the vector store with the document name",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "inhouse-python-index",
+          "mode": "list",
+          "cachedResultName": "inhouse-python-index"
+        },
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "filename",
+                "value": "={{ $json.output.document }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.2,
+      "position": [
+        704,
+        224
+      ],
+      "id": "008a0ae9-f7c5-48ec-89f4-a1579cc6df30",
+      "name": "Pinecone Vector Store1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-2025-04-14",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-2025-04-14"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        576,
+        224
+      ],
+      "id": "be33c87e-3c61-401b-a663-4bdc8fa46e91",
+      "name": "OpenAI Chat Model1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d289d0ff-b0ca-46a4-9bd3-4be4355876b6",
+  "meta": {
+    "instanceId": "58539c9ed2495393c7d57a5cf3bb4571c2152ab782e2d8382c9e454ab731b748"
+  },
+  "id": "3koHbC525LFIOf2Y",
+  "tags": []
+}
