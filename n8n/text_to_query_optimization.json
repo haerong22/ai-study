@@ -1,0 +1,435 @@
+{
+  "name": "Text to Query(스키마 조회 최적화)",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        -144
+      ],
+      "id": "3c8df2dd-6f4c-4355-ad00-988f3a57185f",
+      "name": "When chat message received",
+      "webhookId": "79d18a3d-8725-40df-a1be-014265561e1b"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-2025-04-14",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-2025-04-14"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1488,
+        80
+      ],
+      "id": "fd98b990-22a1-49ae-af95-f9daeaa8c226",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "UAWpNwMCLySTsnwy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"query\": {\n\t\t\t\"type\": \"string\"\n\t\t}\n\t}\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1616,
+        80
+      ],
+      "id": "c79acd66-03f0-4ff0-b3cf-a5d6beea309d",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2128,
+        80
+      ],
+      "id": "1c2dbf4a-5ee1-44f6-824e-76ddd58bdfbf",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "UAWpNwMCLySTsnwy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('When chat message received').first().json.chatInput }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=DATABASE SCHEMA:\n{{ $json.schema }}\n\nLooking at the database schema above, convert a user's question into a SQL query to fetch data from the database. return the SQL query. "
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1472,
+        -144
+      ],
+      "id": "eeb28bde-6a72-4f3c-bd54-50e649ec0bf0",
+      "name": "쿼리 생성"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Convert this into a user friendly message by looking at the user's original question and the query result\n\nQUERY RESULT: \n{{ $json.toJsonString() }}\n\nOriginal Question:\n{{ $('When chat message received').first().json.chatInput }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Look at the query result and the user's question and return a user friendly message."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        2048,
+        -144
+      ],
+      "id": "60f1223a-65d0-4a1b-82ba-13126bffb4f5",
+      "name": "메시지 생성"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.output.query }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1824,
+        -144
+      ],
+      "id": "173a5971-36a8-4dbb-8007-d6d899c193cd",
+      "name": "쿼리 실행",
+      "credentials": {
+        "postgres": {
+          "id": "BxZ2hizZudEjhI0G",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n      'CREATE TABLE ' || table_name || ' (' || E'\\n' ||\n      string_agg(\n          '    ' || column_name || ' ' || \n          CASE \n  WHEN data_type = 'character varying' THEN 'VARCHAR(' || character_maximum_length || ')'\n  WHEN data_type = 'integer' AND column_default LIKE 'nextval%' THEN 'SERIAL PRIMARY KEY'\n  WHEN data_type = 'numeric' THEN 'DECIMAL(' || numeric_precision || ',' || numeric_scale || ')'\n  WHEN data_type = 'timestamp without time zone' THEN 'TIMESTAMP'\n  WHEN data_type = 'boolean' THEN 'BOOLEAN'\n  ELSE UPPER(data_type)\n  END ||\n  CASE WHEN is_nullable = 'NO' AND column_default NOT LIKE 'nextval%' THEN ' NOT NULL' ELSE '' END ||\n  CASE WHEN column_default IS NOT NULL AND column_default NOT LIKE 'nextval%' \n  THEN ' DEFAULT ' || column_default ELSE '' END,\n  E',\\n' ORDER BY ordinal_position\n  ) || E'\\n' || ');' || E'\\n\\n' AS create_statement\n  FROM information_schema.columns \n  WHERE table_schema = 'public' \n    AND table_name IN ({{ $json.output.tables.map(tableName => `'${tableName}'`) }})\n  GROUP BY table_name\n  ORDER BY table_name;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1024,
+        -144
+      ],
+      "id": "ac8d31f3-654d-48fe-a797-9b6b93d19691",
+      "name": "스키마 조회",
+      "credentials": {
+        "postgres": {
+          "id": "BxZ2hizZudEjhI0G",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let schema = ''\n\nfor (const item of $input.all()) {\n  schema += `${item.json.create_statement}\\n\\n`\n}\n\nreturn [{schema}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        -144
+      ],
+      "id": "dd62250e-1fca-4a7d-864d-2657509e5d99",
+      "name": "schema text"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  col.table_name,\n  COALESCE(obj_description(c.oid), 'No description available') AS table_description,\n  string_agg(col.column_name, ', ' ORDER BY col.ordinal_position) AS all_columns\nFROM information_schema.columns col\n  LEFT JOIN pg_class c ON c.relname = col.table_name\n  LEFT JOIN pg_namespace n ON n.oid = c.relnamespace\nWHERE col.table_schema = 'public'\n  AND n.nspname = 'public'\nGROUP BY col.table_name, c.oid\nORDER BY col.table_name;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        224,
+        -144
+      ],
+      "id": "af40b2fd-7823-46af-81dc-242b31204a5d",
+      "name": "테이블 이름 추출",
+      "credentials": {
+        "postgres": {
+          "id": "BxZ2hizZudEjhI0G",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let schema = ''\n\nfor (const item of $input.all()) {\n  schema += `tableName: ${item.json.table_name}\n  tableDescription: ${item.json.table_description}\n  columnList: ${item.json.all_columns}`\n}\n\nreturn [{schema}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        -144
+      ],
+      "id": "5553727a-fcda-4fd1-8b8a-c71030fca49c",
+      "name": "schema text1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-2025-04-14",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-2025-04-14"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        688,
+        80
+      ],
+      "id": "712976d7-991f-43c2-93b0-da52224b2b31",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "UAWpNwMCLySTsnwy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"tables\": {\n\t\t\t\"type\": \"array\",\n\t\t\t\"tableName\": {\n\t\t\t\t\"type\": \"string\"\n\t\t\t}\n\t\t}\n\t}\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        816,
+        80
+      ],
+      "id": "cbfe784e-7761-475a-86fb-6057e5d7b304",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('When chat message received').first().json.chatInput }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=TABLE DESCRIPTION:\n{{ $json.schema }}\n\nBy looking at the table descriotion above, which contains information about the name of tables and their relative descriotions along with the list of columns, return the list of names of the tables that you need to access in order to retrieve data related to the user's question."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        672,
+        -144
+      ],
+      "id": "d2fbbf54-a3f5-4308-9133-b7897ea46da1",
+      "name": "테이블 리스트 추출"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "테이블 이름 추출",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "쿼리 생성",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "쿼리 생성",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "메시지 생성",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "쿼리 생성": {
+      "main": [
+        [
+          {
+            "node": "쿼리 실행",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "쿼리 실행": {
+      "main": [
+        [
+          {
+            "node": "메시지 생성",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "스키마 조회": {
+      "main": [
+        [
+          {
+            "node": "schema text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "schema text": {
+      "main": [
+        [
+          {
+            "node": "쿼리 생성",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "테이블 이름 추출": {
+      "main": [
+        [
+          {
+            "node": "schema text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "schema text1": {
+      "main": [
+        [
+          {
+            "node": "테이블 리스트 추출",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "테이블 리스트 추출",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "테이블 리스트 추출",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "테이블 리스트 추출": {
+      "main": [
+        [
+          {
+            "node": "스키마 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "be33f016-dd7a-4d36-aebf-ee735177e5ce",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "58539c9ed2495393c7d57a5cf3bb4571c2152ab782e2d8382c9e454ab731b748"
+  },
+  "id": "o0CE4EIjEwj1fgdr",
+  "tags": []
+}
