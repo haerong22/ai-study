@@ -3,7 +3,7 @@ from crewai.project import CrewBase, task, agent, crew
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
 from env import TELEGRAM_BOT_TOKEN
-from tools import web_Search_tool, google_search_tool
+from tools import web_Search_tool, naver_search_tool, google_search_tool
 
 
 @CrewBase
@@ -20,7 +20,7 @@ class ChatBotCrew:
             """,
             # llm="openai/o4-mini",
             llm="gemini/gemini-2.0-flash-lite",
-            tools=[google_search_tool],
+            tools=[naver_search_tool, google_search_tool],
         )
 
     @task
