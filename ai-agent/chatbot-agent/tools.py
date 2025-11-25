@@ -1,9 +1,89 @@
 from typing import Type
 from crewai.tools import BaseTool
 from firecrawl import Firecrawl
+import requests
+import re
 
 from pydantic import BaseModel, Field
-from env import FIRECRAWL_API_KEY
+
+from env import (
+    FIRECRAWL_API_KEY,
+    GOOGLE_SEARCH_CX,
+    GOOGLE_SEARCH_API_KEY,
+)
+
+
+class GoogleSearchToolInput(BaseModel):
+    """Input schema for GoogleSearchTool."""
+
+    query: str = Field(..., description="The search query to look for.")
+    num: int = Field(
+        default=10, description="Number of search results to display (max 10)."
+    )
+
+
+class GoogleSearchTool(BaseTool):
+    name: str = "google_search_tool"
+    description: str = (
+        "Searches Google for information based on a query and returns relevant results with titles, URLs, and snippets."
+    )
+    args_schema: Type[BaseModel] = GoogleSearchToolInput
+
+    def _run(self, query: str, num: int = 10):
+        try:
+            url = "https://www.googleapis.com/customsearch/v1"
+            params = {
+                "key": GOOGLE_SEARCH_API_KEY,
+                "cx": GOOGLE_SEARCH_CX,
+                "q": query,
+                "num": min(num, 10),  # API limit is 10
+            }
+
+            print(
+                f"[DEBUG] Making request to Google Custom Search API with query: {query}"
+            )
+
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+
+            data = response.json()
+
+            print(f"[DEBUG] Raw response type: {type(data)}")
+            print(f"[DEBUG] Raw response: {data}")
+
+            if "items" not in data or not data["items"]:
+                return f"No search results found for query: {query}"
+
+            search_results = []
+
+            for item in data["items"]:
+                title = item.get("title", "No Title")
+                url = item.get("link", "")
+                snippet = item.get("snippet", "")
+
+                search_results.append(
+                    {
+                        "title": title,
+                        "url": url,
+                        "content": (
+                            snippet[:500] + "..." if len(snippet) > 500 else snippet
+                        ),
+                    }
+                )
+
+            result = {
+                "query": query,
+                "results_count": len(search_results),
+                "total": data.get("searchInformation", {}).get("totalResults", 0),
+                "results": search_results,
+            }
+
+            print("DEBUG : ", result)
+
+            return result
+
+        except Exception as e:
+            return f"Error searching for query '{query}': {e}"
 
 def _web_search(query: str):
     firecrawl = Firecrawl(api_key=FIRECRAWL_API_KEY)
@@ -58,3 +138,4 @@ class WebSearchTool(BaseTool):
         return _web_search(query)
     
 web_Search_tool = WebSearchTool()
+google_search_tool = GoogleSearchTool()
