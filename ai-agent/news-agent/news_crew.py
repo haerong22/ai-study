@@ -301,5 +301,5 @@ class NewsCrew:
         )
     
 
-news_crew = NewsCrew()
-news_crew.crew().kickoff()
+# news_crew = NewsCrew()
+# news_crew.crew().kickoff()

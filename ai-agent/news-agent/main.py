@@ -1,23 +1,23 @@
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
-from env import TELEGRAM_BOT_TOKEN
-from news_crew import NewsCrew
+# from telegram import Update
+# from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
+# from env import TELEGRAM_BOT_TOKEN
+# from news_crew import NewsCrew
 
-async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+# async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
-    if update.message is None or update.message.text is None:
-        return 
+#     if update.message is None or update.message.text is None:
+#         return 
 
-    user_message = update.message.text
+#     user_message = update.message.text
 
-    newsCrew = NewsCrew()
+#     newsCrew = NewsCrew()
 
-    result = NewsCrew.crew().kickoff(inputs={"message": user_message})
+#     result = newsCrew.crew().kickoff(inputs={"message": user_message})
 
-    await update.message.reply_text(result.raw)
+#     await update.message.reply_text(result.raw)
 
-app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
+# app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
 
-app.add_handler(MessageHandler(filters.TEXT, handler))
+# app.add_handler(MessageHandler(filters.TEXT, handler))
 
-app.run_polling()
+# app.run_polling()
