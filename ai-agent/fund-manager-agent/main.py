@@ -5,7 +5,7 @@ from crewai.flow.flow import Flow, listen, start, router, or_
 from crewai import Crew, Task, CrewOutput
 from crewai.agent import Agent
 from env import OPENAI_API_KEY
-from tools import web_search_tool
+from tools import web_search_tool, yahoo_finance_tool
 
 
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
@@ -178,8 +178,119 @@ class FundManagerFlow(Flow[FundManagerState]):
 
     @listen(analyze_tech_trends)
     def evaluate_growth_potential(self):
-        pass
-        # self.state.growth_scores = ..
+        """성장성 평가 분석가 - 성장주 분석팀 2단계"""
+
+        growth_analyst = Agent(
+            role="성장성 평가 전문 분석가",
+            backstory="""
+            기업의 재무 데이터와 시장 동향을 종합 분석하여 성장 잠재력을 정확히 평가하는 전문가입니다.
+            매출 성장률, R&D 투자, 시장 경쟁력, 미래 수익성을 다각도로 분석하여 투자 가치를 정량화합니다.
+            """,
+            goal="기술 트렌드 분석 결과를 바탕으로 각 기업의 성장 잠재력을 평가하고 투자 우선순위를 제공한다.",
+            tools=[web_search_tool, yahoo_finance_tool],
+            verbose=True,
+            llm="openai/o4-mini",
+        )
+
+        # Task 1: 기업 재무 분석
+        financial_analysis_task = Task(
+            description=f"""
+            기술 트렌드 분석 결과: {self.state.tech_trends}
+
+            각 후보 기업에 대해 성장성 관련 재무 지표를 분석하세요:
+
+            1. Yahoo Finance 도구로 각 티커의 정확한 재무 데이터 수집 (P/E 비율, 매출 성장률, ROE 등)
+            2. "기업명 재무실적" 웹 검색으로 최신 분기 실적 및 전망 정보 수집
+            3. "기업명 R&D 투자" 검색으로 혁신 투자 현황 분석
+            4. "기업명 시장 전망" 검색으로 미래 성장 가능성 평가
+
+            Yahoo Finance 도구 사용법:
+            - yahoo_finance_tool("NVDA") - NVIDIA 재무 데이터
+            - yahoo_finance_tool("MSFT", "2y") - Microsoft 2년 데이터
+
+            결과는 기업별로 정리해주세요:
+            - 티커 심볼과 회사명
+            - 매출 성장률 (YoY)
+            - R&D 투자 비율 또는 투자 규모
+            - 주요 성장 동력
+            - 시장에서의 경쟁 우위
+            """,
+            agent=growth_analyst,
+            expected_output="기업별 재무 분석 보고서 (성장성 지표 중심)",
+        )
+
+        # Task 2: 성장성 점수 산정
+        growth_scoring_task = Task(
+            description="""
+            앞선 재무 분석 결과를 바탕으로 각 기업의 성장 잠재력을 평가하세요:
+
+            평가 기준:
+            1. 매출 성장률 (30% 가중치) - 높을수록 좋음
+            2. R&D 투자 비율 (25% 가중치) - 지속적 혁신 능력
+            3. 시장 점유율 및 경쟁력 (25% 가중치) - 시장 지배력
+            4. 미래 성장 전망 (20% 가중치) - 산업 트렌드 적합성
+
+            각 기업에 대해:
+            - 성장 잠재력 점수 (1-10점 척도)
+            - 점수 산정 근거
+            - 주요 성장 동력
+            - 투자 시 기대 효과
+            """,
+            agent=growth_analyst,
+            expected_output="기업별 성장성 점수 및 평가 근거",
+            context=[financial_analysis_task],
+        )
+
+        # Task 3: 결과 구조화
+        growth_data_structuring_task = Task(
+            description="""
+            앞선 분석 결과를 다음 단계에서 활용할 수 있도록 구조화하세요:
+
+            다음 JSON 배열 형식으로 정확히 응답해주세요:
+            [
+                {{
+                    "ticker": "티커심볼",
+                    "company": "회사명",
+                    "growth_score": 9.2,
+                    "growth_factors": [
+                        "주요 성장 요인1",
+                        "주요 성장 요인2"
+                    ],
+                    "financial_highlights": {{
+                        "revenue_growth": "매출 성장률 정보",
+                        "rd_investment": "R&D 투자 정보",
+                        "market_position": "시장 위치 정보"
+                    }},
+                    "investment_rationale": "투자 근거 요약"
+                }}
+            ]
+
+            중요한 주의사항:
+            - growth_score는 숫자 형태 (소수점 1자리)
+            - 실제 분석된 내용만 포함
+            - 마크다운 코드 블록(```)을 사용하지 말고 순수한 JSON만 반환
+            - JSON 앞뒤에 어떤 텍스트도 추가하지 마세요
+            - 응답은 [ 로 시작하고 ] 로 끝나야 합니다
+            """,
+            agent=growth_analyst,
+            expected_output="""A JSON array starting with [ and ending with ]. No markdown formatting, no code blocks, no additional text. Pure JSON only.""",
+            context=[financial_analysis_task, growth_scoring_task],
+            output_file="output/evaluate_growth_potential.json",
+        )
+
+        # Crew 생성 및 실행
+        growth_analysis_crew = Crew(
+            agents=[growth_analyst],
+            tasks=[
+                financial_analysis_task,
+                growth_scoring_task,
+                growth_data_structuring_task,
+            ],
+            verbose=True,
+        )
+
+        # Crew 실행
+        self.state.growth_scores = growth_analysis_crew.kickoff()
 
     @listen("value_analysis")
     def screen_stable_companies(self):

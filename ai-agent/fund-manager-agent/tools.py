@@ -136,6 +136,7 @@ class WebSearchTool(BaseTool):
 
 
 web_search_tool = WebSearchTool()
+yahoo_finance_tool = YahooFinanceTool()
 
 
 if __name__ == "__main__":
