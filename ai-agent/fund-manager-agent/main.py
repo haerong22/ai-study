@@ -294,8 +294,149 @@ class FundManagerFlow(Flow[FundManagerState]):
 
     @listen("value_analysis")
     def screen_stable_companies(self):
-        pass
-        # self.state.stability_scores = ..
+        """안정성 스크리너 - 가치/배당주 분석팀 1단계"""
+
+        stability_screener = Agent(
+            role="안정성 스크리닝 전문 분석가",
+            backstory="""
+            재무적으로 안정되고 꾸준한 실적을 보이는 기업들을 선별하는 전문가입니다.
+            부채 비율, 수익성, 배당 이력, 시장 지위를 종합적으로 분석하여 장기 투자에 적합한 안전한 기업들을 발굴합니다.
+            """,
+            goal="사용자의 보수적 투자 목표에 맞춰 재무적으로 안정되고 장기간 꾸준한 실적을 낸 기업들을 선별한다.",
+            tools=[web_search_tool, yahoo_finance_tool],
+            verbose=True,
+            llm="openai/o4-mini",
+        )
+
+        # Task 1: 안정적 기업 발굴
+        stable_company_discovery_task = Task(
+            description=f"""
+            사용자의 투자 목표: {self.state.investment_goal}
+            투자 성향: {self.state.risk_preference}
+
+            보수적 투자에 적합한 안정적인 기업들을 발굴하세요:
+
+            1. "안정적인 배당주", "블루칩 주식", "S&P 500 대형주" 키워드로 웹 검색
+            2. "저PER 가치주", "우량 배당주", "디펜시브 주식" 검색으로 후보 발굴
+            3. 다음 섹터 우선 고려: 소비재, 유틸리티, 헬스케어, 금융
+            4. 나스닥/NYSE 상장 기업 중 시가총액 상위 기업 선별
+
+            결과는 다음 형식으로 정리해주세요:
+            - 발굴된 기업들의 티커 심볼과 회사명
+            - 각 기업이 속한 섹터
+            - 안정성 근거 (업계 지위, 사업 모델 등)
+            - 배당 지급 여부
+            """,
+            agent=stability_screener,
+            expected_output="안정적 기업 후보 리스트 (티커별 기본 정보 포함)",
+        )
+
+        # Task 2: 재무 안정성 분석
+        financial_stability_task = Task(
+            description="""
+            발굴된 기업들의 재무 안정성을 심층 분석하세요:
+
+            1. Yahoo Finance 도구로 각 후보 기업의 재무 데이터 수집
+            2. 다음 안정성 지표 중점 분석:
+               - 부채비율 (Debt-to-Equity): 0.5 미만 선호
+               - P/E 비율: 과도하지 않은 수준 (50 미만)
+               - ROE: 일관된 수익성 (5% 이상)
+               - 이익률: 안정적 영업이익률
+               - 배당수익률: 지속가능한 배당
+
+            3. "기업명 재무건전성" 웹 검색으로 추가 정보 수집
+            4. "기업명 신용등급" 검색으로 신용도 확인
+
+            Yahoo Finance 도구 활용:
+            - yahoo_finance_tool("JNJ") - Johnson & Johnson 데이터
+            - yahoo_finance_tool("KO") - Coca-Cola 데이터
+
+            결과는 기업별로 정리해주세요:
+            - 주요 재무 지표와 안정성 평가
+            - 부채 수준과 수익성 분석
+            - 배당 정책과 지속가능성
+            """,
+            agent=stability_screener,
+            expected_output="기업별 재무 안정성 분석 보고서",
+            context=[stable_company_discovery_task],
+        )
+
+        # Task 3: 안정성 점수 산정
+        stability_scoring_task = Task(
+            description="""
+            재무 분석 결과를 바탕으로 각 기업의 안정성 점수를 산정하세요:
+
+            평가 기준:
+            1. 재무 건전성 (35% 가중치) - 부채비율, 유동비율, 이자보상배수
+            2. 수익 안정성 (30% 가중치) - 꾸준한 영업이익, ROE 일관성
+            3. 배당 정책 (20% 가중치) - 배당 지속성, 배당성장률
+            4. 시장 지위 (15% 가중치) - 업계 선도, 브랜드 파워
+
+            각 기업에 대해:
+            - 안정성 점수 (1-10점 척도)
+            - 점수 산정 근거
+            - 주요 안정 요소
+            - 보수적 투자에 적합한 이유
+            """,
+            agent=stability_screener,
+            expected_output="기업별 안정성 점수 및 평가 근거",
+            context=[stable_company_discovery_task, financial_stability_task],
+        )
+
+        # Task 4: 결과 구조화
+        stability_data_structuring_task = Task(
+            description="""
+            앞선 분석 결과를 다음 단계에서 활용할 수 있도록 구조화하세요:
+
+            다음 JSON 배열 형식으로 정확히 응답해주세요:
+            [
+                {{
+                    "ticker": "티커심볼",
+                    "company": "회사명",
+                    "stability_score": 9.5,
+                    "stability_factors": [
+                        "주요 안정 요인1",
+                        "주요 안정 요인2"
+                    ],
+                    "financial_metrics": {{
+                        "debt_to_equity": "부채비율 정보",
+                        "pe_ratio": "P/E 비율 정보",
+                        "roe": "ROE 정보",
+                        "dividend_yield": "배당수익률 정보"
+                    }},
+                    "investment_rationale": "안정적 투자 근거"
+                }}
+            ]
+
+            중요한 주의사항:
+            - stability_score는 숫자 형태 (소수점 1자리)
+            - 실제 분석된 내용만 포함
+            - 마크다운 코드 블록(```)을 사용하지 말고 순수한 JSON만 반환
+            - JSON 앞뒤에 어떤 텍스트도 추가하지 마세요
+            - 응답은 [ 로 시작하고 ] 로 끝나야 합니다
+            """,
+            agent=stability_screener,
+            expected_output="""A JSON array starting with [ and ending with ]. No markdown formatting, no code blocks, no additional text. Pure JSON only.""",
+            context=[
+                stable_company_discovery_task,
+                financial_stability_task,
+                stability_scoring_task,
+            ],
+            output_file="output/screen_stable_companies.json",
+        )
+
+        stability_screening_crew = Crew(
+            agents=[stability_screener],
+            tasks=[
+                stable_company_discovery_task,
+                financial_stability_task,
+                stability_scoring_task,
+                stability_data_structuring_task,
+            ],
+            verbose=True,
+        )
+
+        self.state.stability_scores = stability_screening_crew.kickoff()
 
     @listen(screen_stable_companies)
     def evaluate_value_potential(self):
