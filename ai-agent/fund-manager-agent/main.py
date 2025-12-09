@@ -440,8 +440,161 @@ class FundManagerFlow(Flow[FundManagerState]):
 
     @listen(screen_stable_companies)
     def evaluate_value_potential(self):
-        pass
-        # self.state.divide_scores = ..
+        """배당 분석가 - 가치/배당주 분석팀 2단계"""
+
+        dividend_analyst = Agent(
+            role="배당 정책 전문 분석가",
+            backstory="""
+            기업의 배당 정책과 배당 지속 가능성을 심층 분석하는 전문가입니다.
+            배당 성장률, 배당 안정성, 배당성향, 배당 이력을 종합적으로 평가하여 장기 배당 투자에 최적화된 종목을 선별합니다.
+            """,
+            goal="안정성 스크리닝된 기업들의 배당 정책을 심층 분석하여 배당 투자 우선순위를 제공한다.",
+            tools=[web_search_tool, yahoo_finance_tool],
+            llm="openai/o4-mini",
+        )
+
+        # Task 1: 배당 데이터 수집
+        dividend_data_collection_task = Task(
+            description=f"""
+            안정성 스크리닝 결과: {self.state.stability_scores}
+
+            각 안정적 기업들의 배당 관련 데이터를 수집하세요:
+
+            1. Yahoo Finance 도구로 각 기업의 배당 정보 수집:
+               - 현재 배당수익률 (Dividend Yield)
+               - 배당성향 (Payout Ratio)
+               - 배당 지급 이력
+
+            2. "기업명 배당" 웹 검색으로 추가 배당 정보 수집:
+               - 배당 성장 이력
+               - 배당 삭감/중단 이력
+               - 배당 정책 및 전망
+
+            3. "기업명 배당왕", "기업명 배당성장" 검색으로 배당 평판 조사
+
+            Yahoo Finance 도구 활용:
+            - yahoo_finance_tool("KO") - 코카콜라 배당 데이터
+            - yahoo_finance_tool("JNJ") - J&J 배당 데이터
+
+            결과는 기업별로 정리해주세요:
+            - 현재 배당수익률과 배당성향
+            - 배당 지급 연수와 성장 이력
+            - 배당 삭감/중단 여부
+            - 배당 지속가능성 평가
+            """,
+            agent=dividend_analyst,
+            expected_output="기업별 배당 데이터 수집 보고서 (배당 이력 및 현황 포함)",
+        )
+
+        # Task 2: 배당 품질 평가
+        dividend_quality_assessment_task = Task(
+            description="""
+            수집된 배당 데이터를 바탕으로 배당 품질을 평가하세요:
+
+            평가 기준:
+            1. 배당 지속성 (40% 가중치) - 연속 배당 지급 기간, 삭감 이력 없음
+            2. 배당 성장성 (30% 가중치) - 과거 5년간 배당 성장률
+            3. 배당 수익률 (20% 가중치) - 현재 배당수익률 적정 수준 (2-6%)
+            4. 배당 건전성 (10% 가중치) - 배당성향 60% 이하, 지속가능한 수준
+
+            추가 고려사항:
+            - 배당귀족주(25년+), 배당왕(50년+) 가산점
+            - 경기방어적 섹터 (유틸리티, 소비재) 선호
+            - FCF 대비 배당성향 평가
+
+            각 기업에 대해:
+            - 배당 품질 점수 (1-10점 척도)
+            - 배당 매력 요소
+            - 배당 리스크 요인
+            - 장기 배당 전망
+            """,
+            agent=dividend_analyst,
+            expected_output="기업별 배당 품질 평가 보고서",
+            context=[dividend_data_collection_task],
+        )
+
+        # Task 3: 배당 매력도 점수 산정
+        dividend_scoring_task = Task(
+            description="""
+            배당 품질 평가 결과를 바탕으로 최종 배당 매력도 점수를 산정하세요:
+
+            종합 평가 기준:
+            1. 배당왕/배당귀족 여부 - 최고 가점
+            2. 배당 성장 일관성 - 5년간 꾸준한 성장
+            3. 배당수익률 매력도 - 시장 대비 적정 수준
+            4. 배당 안전성 - 수익성 대비 지속가능한 배당
+
+            특별 고려사항:
+            - 경기침체기 배당 유지 능력
+            - 현금흐름 대비 배당 부담 정도
+            - 향후 배당 정책 전망
+
+            각 기업에 대해:
+            - 배당 매력도 점수 (1-10점 척도)
+            - 점수 산정 근거
+            - 핵심 배당 매력 요소
+            - 배당 투자 추천 사유
+            """,
+            agent=dividend_analyst,
+            expected_output="기업별 배당 매력도 점수 및 투자 추천 근거",
+            context=[dividend_data_collection_task, dividend_quality_assessment_task],
+        )
+
+        # Task 4: 결과 구조화
+        dividend_data_structuring_task = Task(
+            description="""
+            앞선 분석 결과를 다음 단계에서 활용할 수 있도록 구조화하세요:
+
+            다음 JSON 배열 형식으로 정확히 응답해주세요:
+            [
+                {{
+                    "ticker": "티커심볼",
+                    "company": "회사명",
+                    "dividend_score": 9.5,
+                    "dividend_factors": [
+                        "주요 배당 매력 요인1",
+                        "주요 배당 매력 요인2"
+                    ],
+                    "dividend_metrics": {{
+                        "dividend_yield": "현재 배당수익률",
+                        "payout_ratio": "배당성향 정보",
+                        "dividend_years": "연속 배당 지급 년수",
+                        "dividend_growth": "배당 성장률 정보"
+                    }},
+                    "dividend_status": "배당왕/배당귀족/일반",
+                    "investment_rationale": "배당 투자 근거"
+                }}
+            ]
+
+            중요한 주의사항:
+            - dividend_score는 숫자 형태 (소수점 1자리)
+            - 실제 분석된 내용만 포함
+            - 마크다운 코드 블록(```)을 사용하지 말고 순수한 JSON만 반환
+            - JSON 앞뒤에 어떤 텍스트도 추가하지 마세요
+            - 응답은 [ 로 시작하고 ] 로 끝나야 합니다
+            """,
+            agent=dividend_analyst,
+            expected_output="""A JSON array starting with [ and ending with ]. No markdown formatting, no code blocks, no additional text. Pure JSON only.""",
+            context=[
+                dividend_data_collection_task,
+                dividend_quality_assessment_task,
+                dividend_scoring_task,
+            ],
+            output_file="output/analyze_dividend_policy.json",
+        )
+
+        dividend_analysis_crew = Crew(
+            agents=[dividend_analyst],
+            tasks=[
+                dividend_data_collection_task,
+                dividend_quality_assessment_task,
+                dividend_scoring_task,
+                dividend_data_structuring_task,
+            ],
+            verbose=True,
+        )
+
+        self.state.divide_scores = dividend_analysis_crew.kickoff()
 
     @listen(or_(evaluate_growth_potential, evaluate_value_potential))
     def synthesize_portfolio(self):
