@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from crewai.flow.flow import Flow, listen, start, router, or_
 from crewai.agent import LiteAgentOutput
 from crewai import Agent, Task, Crew, LLM
+from crewai.project import CrewBase, agent, task, crew
 from env import OPENAI_API_KEY
 from tools import web_search_tool
 
@@ -27,6 +28,73 @@ class BlogContentMakerState(BaseModel):
     score_manager: ScoreManager | None = None
     post: Post | None = None
 
+@CrewBase
+class SEOManagerCrew:
+
+    @agent
+    def seo_agent(self):
+        return Agent(
+            role="SEO 전문가",
+            goal="블로그 게시물의 SEO 효율성을 엄격하고 정확하게 평가하여 검색 엔진 최적화 품질을 측정합니다. 각 평가 요소에 대해 구체적이고 실용적인 피드백을 제공하며, 객관적인 기준에 따라 정확한 점수를 산출합니다.",
+            backstory="""
+            당신은 10년 이상의 경력을 가진 SEO 전문 컨설턴트로, 구글 알고리즘 변화와 검색 트렌드에 정통합니다.
+            키워드 밀도, 제목 최적화, 콘텐츠 구조화, 사용자 의도 분석, 가독성 평가 등 모든 SEO 요소를 체계적으로 분석합니다.
+            데이터 기반의 정확한 평가를 통해 콘텐츠가 검색 결과에서 상위 랭킹을 달성할 수 있도록 구체적이고 실행 가능한 개선안을 제시합니다.
+            """,
+            llm="openai/o4-mini",
+            verbose=True,
+        )
+
+    @task
+    def check_seo_task(self):
+        return Task(
+            description="""
+            주어진 블로그 게시물을 다음 SEO 기준으로 종합 분석하여 정확한 점수와 개선 방안을 제시하세요:
+
+            ## 평가 기준 (각 항목별 세부 분석 필수):
+            1. **키워드 최적화 (25점)**
+               - 타겟 키워드의 자연스러운 배치와 밀도
+               - 제목, 소제목, 본문 내 키워드 활용도
+               - 관련 키워드 및 동의어 사용
+
+            2. **제목 및 구조 최적화 (25점)**
+               - 제목의 검색 친화성과 클릭 유도성
+               - 헤딩 태그(H1, H2, H3) 구조화
+               - 논리적 콘텐츠 흐름
+
+            3. **콘텐츠 품질 및 길이 (25점)**
+               - 정보의 정확성과 유용성
+               - 적절한 콘텐츠 길이와 깊이
+               - 독창성과 가치 제공
+
+            4. **사용자 경험 및 가독성 (25점)**
+               - 문장 길이와 가독성
+               - 단락 구성과 시각적 구조
+               - 검색 의도와의 일치도
+
+            ## 출력 요구사항:
+            - **총점**: 0-100점 (각 항목별 점수 합산)
+            - **상세 분석**: 각 평가 기준별 현재 상태와 구체적 개선점
+            - **우선순위**: 가장 중요한 개선 영역 3가지
+            - **실행 가능한 개선안**: 구체적이고 즉시 적용 가능한 방법
+
+            분석 대상 게시물: {post}
+            타겟 주제: {topic}
+            """,
+            expected_output="""
+            다음을 포함하는 Score 객체:
+            - score: SEO 품질을 평가하는 0-100 사이의 정수
+            - reason: 점수에 영향을 미치는 주요 요인을 설명하는 문자열
+            """,
+            agent=self.seo_agent(),
+            output_pydantic=ScoreManager,
+        )
+
+    @crew
+    def crew(self):
+        return Crew(
+            agents=[self.seo_agent()], tasks=[self.check_seo_task()], verbose=True
+        )
 
 class BlogContentMarkerFlow(Flow):
 
