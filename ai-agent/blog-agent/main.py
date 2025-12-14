@@ -130,7 +130,90 @@ class BlogContentMarkerFlow(Flow):
 
     @listen(or_(research_by_topic, "remake"))
     def handle_make_blog(self):
-        pass
+        llm = LLM(model="openai/o4-mini")
+
+        score_reason = (
+            self.state.score_manager.reason if self.state.score_manager else ""
+        )
+        if self.state.post is None:
+            result = llm.call(
+                f"""
+                다음 리서치 데이터(resarch data)를 기반으로 '{self.state.topic}' 주제에 대한 고품질 SEO 최적화 블로그 글을 작성해 주세요.
+
+                ## 작성 가이드라인:
+                ### 내용 구성
+                - **도입부**: 주제의 중요성과 현재 상황을 간결하게 설명
+                - **본문**: 3-4개 소주제로 나눠 체계적으로 설명
+                - **결론**: 핵심 인사이트와 실용적 시사점 제시
+
+                ### SEO 최적화 요소
+                - **제목**: 60자 이내, 주요 키워드 포함, 호기심 유발
+                - **키워드**: 주제 관련 키워드를 자연스럽게 배치
+                - **구조**: 논리적 흐름과 명확한 구성
+                - **길이**: {self.state.max_length}자 이내로 충분한 정보 제공
+
+                ### 타깃 독자
+                - 주제에 관심 있는 일반인부터 전문가까지
+                - 기초 개념부터 시작하여 심화 내용까지 포괄
+
+                반드시 다음 JSON 형식으로 응답하세요:
+                {{
+                    "title": "검색에 최적화된 매력적인 제목",
+                    "content": "구조화되고 유용한 블로그 내용",
+                    "hashtag": ["주요키워드1", "주요키워드2", "주요키워드3"]
+                }}
+
+                <research data>
+                -----------------------------
+                {self.state.research_data}
+                -----------------------------
+                </research data>
+                """
+            )
+        else:
+            # 블로그 remake
+            result = llm.call(
+                f"""
+            SEO 전문가의 분석에 따르면 '{self.state.topic}' 주제의 블로그 게시물(post)이 다음과 같은 이유로 개선이 필요합니다:
+            **SEO 분석 결과**: {score_reason}
+
+            ## 개선 전략:
+            ### 핵심 개선 영역
+            - **콘텐츠 품질 제고**: 더 깊이 있고 전문적인 정보 제공
+            - **SEO 최적화**: 키워드 배치, 제목 최적화, 구조 개선
+            - **사용자 경험**: 가독성과 유용성 향상
+            - **검색 의도**: 사용자가 찾는 정보와 매칭 개선
+
+            ### 리라이팅 가이드라인
+            1. **제목 개선**: 더 구체적이고 검색 친화적으로 수정
+            2. **콘텐츠 재구성**: 논리적 흐름과 명확한 구조
+            3. **가치 추가**: 실용적 정보와 인사이트 강화
+            4. **키워드 최적화**: 주요 키워드의 자연스러운 배치
+
+            반드시 다음 JSON 형식으로 응답하세요:
+            {{
+                "title": "SEO 최적화된 개선된 제목",
+                "content": "고품질로 리라이팅된 블로그 콘텐츠",
+                "hashtag": ["전략적키워드1", "전략적키워드2", "전략적키워드3"]
+            }}
+
+            <post>
+            --------------------------------
+            {self.state.post.model_dump_json()}
+            --------------------------------
+            </post>
+
+            다음 연구를 사용하세요.
+
+            <research data>
+            -----------------------------
+            {self.state.research_data}
+            -----------------------------
+            </research data>
+            """
+            )
+
+        self.state.post = Post.model_validate_json(result)
 
     @listen(handle_make_blog)
     def manage_seo(self):
