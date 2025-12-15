@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from typing import List
 from pydantic import BaseModel
 from crewai.flow.flow import Flow, listen, start, router, or_
@@ -16,17 +17,20 @@ class Post(BaseModel):
     content: str
     hashtag: List[str]
 
+
 class ScoreManager(BaseModel):
     score: int = 0
     reason: str = ""
 
 
 class BlogContentMakerState(BaseModel):
+
     topic: str = ""
     max_length: int = 1000
     research_data: LiteAgentOutput | None = None
     score_manager: ScoreManager | None = None
     post: Post | None = None
+
 
 @CrewBase
 class SEOManagerCrew:
@@ -96,13 +100,14 @@ class SEOManagerCrew:
             agents=[self.seo_agent()], tasks=[self.check_seo_task()], verbose=True
         )
 
-class BlogContentMarkerFlow(Flow):
+
+class BlogContentMakerFlow(Flow[BlogContentMakerState]):
 
     @start()
     def init_make_blog_content(self):
+
         if self.state.topic == "":
-            raise ValueError("주제는 비워둘 수 없습니다.")
-        
+            raise ValueError("주제는 비워둘 수 없습니다")
 
     @listen(init_make_blog_content)
     def research_by_topic(self):
@@ -217,19 +222,67 @@ class BlogContentMarkerFlow(Flow):
 
     @listen(handle_make_blog)
     def manage_seo(self):
-        pass
+
+        if self.state.post is None:
+            raise ValueError("post가 없습니다.")
+
+        result = (
+            SEOManagerCrew()
+            .crew()
+            .kickoff(
+                inputs={
+                    "topic": self.state.topic,
+                    "post": self.state.post.model_dump_json(),
+                }
+            )
+        )
+        self.state.score_manager = result.pydantic  # type:ignore
 
     @router(manage_seo)
     def manage_score_router(self):
 
-        if self.state.score_manager.score >= 70:
+        if self.state.score_manager is None:
+            raise ValueError("score_manager가 없습니다.")
+
+        if self.state.score_manager.score >= 80:
+            self._save_to_markdown()
             return None
-        
+
         else:
             return "remake"
-        
-flow = BlogContentMarkerFlow()
+
+    def _save_to_markdown(self):
+        # 블로그 게시물을 마크다운 파일로 저장
+        if self.state.post is None or self.state.score_manager is None:
+            return
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        filename = f"{self.state.topic}_{timestamp}.md"
+
+        markdown_content = f"""
+        # {self.state.post.title}
+        **주제**: {self.state.topic}
+        **작성일**: {datetime.now().strftime("%Y년 %m월 %d일 %H:%M")}
+        **SEO 점수**: {self.state.score_manager.score}/100
+
+        ## 내용
+        {self.state.post.content}
+
+        ## 해시태그
+        {' '.join(f'#{tag}' for tag in self.state.post.hashtag)}
+
+        ## SEO 분석
+        **점수**: {self.state.score_manager.score}/100
+        **분석**: {self.state.score_manager.reason}
+        """
+
+        with open(filename, "w", encoding="utf-8") as file:
+            file.write(markdown_content)
+
+        print("블로그 게시물이 저장되었습니다.")
+
+
+flow = BlogContentMakerFlow()
 
 flow.kickoff(inputs={"topic": "AI 로보틱스"})
 
-flow.plot()
+# flow.plot()

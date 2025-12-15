@@ -217,6 +217,6 @@ class WebSearchTool(BaseTool):
     def _run(self, query: str):
         return _web_search(query)
     
-web_Search_tool = WebSearchTool()
+web_search_tool = WebSearchTool()
 google_search_tool = GoogleSearchTool()
 naver_search_tool = NaverSearchTool()
