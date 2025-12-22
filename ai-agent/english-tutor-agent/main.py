@@ -6,7 +6,7 @@ from telegram.ext import (
     filters,
 )
 from env import TELEGRAM_BOT_TOKEN
-from tutor_crew import EnglishTutorCrew, add_to_conversation
+from tutor_crew_rag import EnglishTutorCrew, add_to_conversation
 
 
 async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
