@@ -34,7 +34,7 @@ def get_conversation_context():
 
 
 english_conversation_knowledge = PDFKnowledgeSource(
-    file_path=["29ESLConversationTopic.pdf"],
+    file_paths=["29ESLConversationTopic.pdf"],
     metadata={
         "title": "29 ESL Conversation Topics",
         "description": "Comprehensive guide for English conversation practice with topics, questions, and vocabulary.",
