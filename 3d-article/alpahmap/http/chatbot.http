@@ -1,0 +1,7 @@
+###
+POST http://localhost:8080/chatbot
+Content-Type: application/json
+
+{
+  "message": "서울 집 값은 왜이렇게 비쌈?"
+}

@@ -29,7 +29,7 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
-//    implementation("org.springframework.ai:spring-ai-starter-model-openai")
+    implementation("org.springframework.ai:spring-ai-starter-model-openai")
 
     runtimeOnly("com.h2database:h2")
 

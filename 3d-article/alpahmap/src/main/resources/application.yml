@@ -20,3 +20,14 @@ spring:
         dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
         show_sql: true
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4o
+          temperature: 0.7
+      image:
+        options:
+          model: dall-e-3
