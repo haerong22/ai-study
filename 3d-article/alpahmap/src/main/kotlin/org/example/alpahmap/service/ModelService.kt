@@ -3,6 +3,7 @@ package org.example.alpahmap.service
 import org.example.alpahmap.dto.ModelDto
 import org.example.alpahmap.entity.Model
 import org.example.alpahmap.repository.ModelRepository
+import org.springframework.core.io.InputStreamResource
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.io.File
@@ -44,5 +45,15 @@ class ModelService(
             longitude = modelEntity.longitude,
             height = modelEntity.height
         )
+    }
+
+    fun getModelResource(modelId: Long): InputStreamResource {
+        val model = modelRepository.findById(modelId).orElseThrow()
+
+        val file = File(model.filepath)
+
+        if (!file.exists()) throw RuntimeException("File does not exist: ${model.filepath}")
+
+        return InputStreamResource(file.inputStream())
     }
 }

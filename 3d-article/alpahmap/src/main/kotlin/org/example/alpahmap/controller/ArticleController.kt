@@ -3,6 +3,7 @@ package org.example.alpahmap.controller
 import org.example.alpahmap.dto.ArticleRequest
 import org.example.alpahmap.dto.ArticleResponse
 import org.example.alpahmap.service.ArticleService
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -21,4 +22,8 @@ class ArticleController(
         return articleService.createArticle(request)
     }
 
+    @GetMapping
+    fun findAll(): List<ArticleResponse> {
+        return articleService.findAll()
+    }
 }

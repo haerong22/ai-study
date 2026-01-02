@@ -5,7 +5,6 @@ import org.example.alpahmap.dto.ArticleResponse
 import org.example.alpahmap.entity.Article
 import org.example.alpahmap.repository.ArticleRepository
 import org.example.alpahmap.repository.ModelRepository
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 
 @Service
@@ -15,8 +14,7 @@ class ArticleService(
 ) {
 
     fun createArticle(request: ArticleRequest): ArticleResponse {
-        val model = modelRepository.findByIdOrNull(request.modelId)
-            ?: throw IllegalArgumentException("not found model: ${request.modelId}")
+        val model = modelRepository.findById(request.modelId).orElseThrow()
 
         val article = Article(
             title = request.title,
@@ -27,5 +25,9 @@ class ArticleService(
         val saved = articleRepository.save(article)
 
         return ArticleResponse(saved)
+    }
+
+    fun findAll(): List<ArticleResponse> {
+        return articleRepository.findAll().map { ArticleResponse(it) }
     }
 }

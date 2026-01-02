@@ -2,6 +2,11 @@ package org.example.alpahmap.controller
 
 import org.example.alpahmap.dto.ModelDto
 import org.example.alpahmap.service.ModelService
+import org.springframework.core.io.InputStreamResource
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestPart
@@ -22,5 +27,16 @@ class ModelController(
         @RequestPart height: Int,
     ): ModelDto {
         return modelService.createModel(file, latitude, longitude, height)
+    }
+
+    @GetMapping("/{modelId}")
+    fun getModel(
+        @PathVariable modelId: Long,
+    ): ResponseEntity<InputStreamResource> {
+        val modelResource = modelService.getModelResource(modelId)
+        return ResponseEntity.ok()
+            .header("Content-Disposition", "attachment; filename=\"${modelResource.filename}\"")
+            .contentType(MediaType.parseMediaType("model/gltf-binary"))
+            .body(modelResource)
     }
 }
