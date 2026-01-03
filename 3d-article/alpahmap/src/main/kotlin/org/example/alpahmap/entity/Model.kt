@@ -14,5 +14,6 @@ class Model(
     val latitude: Double,
     val longitude: Double,
     val height: Int,
+    val scale: Int,
 ) {
 }

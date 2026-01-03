@@ -1,0 +1,5 @@
+### get articles
+GET http://localhost:8080/article
+
+### get article model
+GET http://localhost:8080/article/model/1

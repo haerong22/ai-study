@@ -7,4 +7,5 @@ data class ModelDto(
     val latitude: Double,
     val longitude: Double,
     val height: Int,
+    val scale: Int,
 )

@@ -8,15 +8,19 @@ import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.io.File
 import java.util.UUID
+import javax.swing.Spring.scale
 
 @Service
 class ModelService(
     private val modelRepository: ModelRepository,
 ) {
 
-    fun createModel(file: MultipartFile, latitude: Double, longitude: Double, height: Int): ModelDto {
+    private val rootDir = System.getProperty("user.dir")
+    private val modelDir = "models"
 
-        val uploadDir = File(System.getProperty("user.dir"), "models")
+    fun createModel(file: MultipartFile, latitude: Double, longitude: Double, height: Int, scale: Int): ModelDto {
+
+        val uploadDir = File(rootDir, "models")
 
         if (!uploadDir.exists()) {
             uploadDir.mkdirs()
@@ -29,10 +33,11 @@ class ModelService(
 
         val model = Model(
             filename = filename,
-            filepath = destFile.absolutePath,
+            filepath = "${modelDir}/${filename}",
             latitude = latitude,
             longitude = longitude,
-            height = height
+            height = height,
+            scale = scale,
         )
 
         val modelEntity = modelRepository.save(model)
@@ -43,14 +48,15 @@ class ModelService(
             filepath = modelEntity.filepath,
             latitude = modelEntity.latitude,
             longitude = modelEntity.longitude,
-            height = modelEntity.height
+            height = modelEntity.height,
+            scale = modelEntity.scale,
         )
     }
 
     fun getModelResource(modelId: Long): InputStreamResource {
         val model = modelRepository.findById(modelId).orElseThrow()
 
-        val file = File(model.filepath)
+        val file = File(rootDir, model.filepath)
 
         if (!file.exists()) throw RuntimeException("File does not exist: ${model.filepath}")
 
