@@ -1,5 +1,7 @@
+import GlobePage from "./globe";
+
 function App() {
-  return <div>ㅎㅇ</div>;
+  return <GlobePage />;
 }
 
 export default App;
