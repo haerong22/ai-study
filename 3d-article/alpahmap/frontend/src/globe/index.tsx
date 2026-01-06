@@ -5,6 +5,7 @@ import Api from "../Api";
 import { type Article } from "../Models";
 import { GLTFLoader } from "three/examples/jsm/Addons.js";
 import { Object3D } from "three";
+import ArticleSideBar from "../article-side-bar";
 
 function GlobePage() {
   const [articles, setArticles] = useState<Article[]>();
@@ -33,24 +34,34 @@ function GlobePage() {
   }, []);
 
   return (
-    <Globe
-      backgroundImageUrl={"//unpkg.com/three-globe/example/img/night-sky.png"}
-      globeImageUrl={"./earthhd.jpg"}
-      bumpImageUrl={"//unpkg.com/three-globe/example/img/earth-topology.png"}
-      objectsData={articles}
-      objectLat={(article) => (article as Article).model.latitude}
-      objectLng={(article) => (article as Article).model.longitude}
-      objectAltitude={(article) => (article as Article).model.height}
-      objectLabel={(article) => (article as Article).title}
-      objectThreeObject={(article) =>
-        (article as Article).model.object3D ?? new Object3D()
-      }
-      onObjectClick={(article) => {
-        setSelectedArticle(article as Article);
-        setIsOpened(true);
-      }}
-      onGlobeClick={() => setIsOpened(false)}
-    />
+    <div className="globe-page">
+      <ArticleSideBar selectedArticle={selectedArticle} isOpened={isOpened} />
+
+      {articles !== undefined && (
+        <Globe
+          backgroundImageUrl={
+            "//unpkg.com/three-globe/example/img/night-sky.png"
+          }
+          globeImageUrl={"./earthhd.jpg"}
+          bumpImageUrl={
+            "//unpkg.com/three-globe/example/img/earth-topology.png"
+          }
+          objectsData={articles}
+          objectLat={(article) => (article as Article).model.latitude}
+          objectLng={(article) => (article as Article).model.longitude}
+          objectAltitude={(article) => (article as Article).model.height}
+          objectLabel={(article) => (article as Article).title}
+          objectThreeObject={(article) =>
+            (article as Article).model.object3D ?? new Object3D()
+          }
+          onObjectClick={(article) => {
+            setSelectedArticle(article as Article);
+            setIsOpened(true);
+          }}
+          onGlobeClick={() => setIsOpened(false)}
+        />
+      )}
+    </div>
   );
 }
 

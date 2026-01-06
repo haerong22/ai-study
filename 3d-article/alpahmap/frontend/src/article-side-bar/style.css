@@ -1,0 +1,37 @@
+.article-side-bar {
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  margin: 20px;
+  z-index: 100;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+  transition: 0.2s left ease-out;
+
+  & > .title {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  & > .content {
+    display: flex;
+    flex-direction: column;
+    overflow-y: scroll;
+    gap: 12px;
+    padding: 12px 16px;
+
+    & > .title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    & > .empty-message {
+      text-align: center;
+      margin-top: 40px;
+      opaticy: 0.7;
+    }
+  }
+}
