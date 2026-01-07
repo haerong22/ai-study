@@ -6,6 +6,7 @@ import { type Article } from "../Models";
 import { GLTFLoader } from "three/examples/jsm/Addons.js";
 import { Object3D } from "three";
 import ArticleSideBar from "../article-side-bar";
+import ChatSideBar from "../chat-side-bar";
 
 function GlobePage() {
   const [articles, setArticles] = useState<Article[]>();
@@ -61,6 +62,8 @@ function GlobePage() {
           onGlobeClick={() => setIsOpened(false)}
         />
       )}
+
+      <ChatSideBar isOpened={isOpened} />
     </div>
   );
 }

@@ -1,0 +1,37 @@
+.chat-side-bar {
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  margin: 20px;
+  z-index: 100;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+  transition: 0.2s right ease-in-out;
+
+  & > .title {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  & > .content {
+    display: flex;
+    flex-direction: column;
+    overflow-y: scroll;
+    gap: 12px;
+    padding: 12px 16px;
+
+    & > .message {
+      display: flex;
+      flex-direction: column;
+      padding: 12px 16px;
+    }
+
+    & > .created-at {
+      opaticy: 0.6;
+      font-size: 14px;
+    }
+  }
+}
