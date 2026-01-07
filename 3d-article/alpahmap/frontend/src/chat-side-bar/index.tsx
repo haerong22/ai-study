@@ -1,7 +1,9 @@
 import Markdown from "react-markdown";
+import { FiSend } from "react-icons/fi";
 import type { Message } from "../Models";
 import "./style.css";
 import { sideBarWidth } from "../Constants";
+import { useState } from "react";
 
 const dummyMessages: Message[] = [
   {
@@ -19,6 +21,12 @@ interface ChatSideBarProps {
 }
 
 function ChatSideBar({ isOpened }: ChatSideBarProps) {
+  const [prompt, setPrompt] = useState("");
+  const [isFetching, setIsFetching] = useState(false);
+  const buttonDisabled = !prompt || isFetching;
+
+  const handleSendMessage = () => {};
+
   return (
     <div
       className="chat-side-bar bg-blur-24"
@@ -32,6 +40,21 @@ function ChatSideBar({ isOpened }: ChatSideBarProps) {
         {dummyMessages.map((message, index) => (
           <MessageComp key={index} message={message} />
         ))}
+      </div>
+      <div className="input-wrapper">
+        <input
+          value={prompt}
+          onChange={(event) => setPrompt(event.target.value)}
+          placeholder="내용을 입력하세요"
+        />
+        <FiSend
+          size={32}
+          color={buttonDisabled ? "#868181ff" : "#db1f1fff"}
+          onClick={() => {
+            if (buttonDisabled) return;
+            handleSendMessage();
+          }}
+        />
       </div>
     </div>
   );
