@@ -16,4 +16,13 @@ class GithubService(
             .retrieve()
             .body(String::class.java)!!
     }
+
+    fun commentOnPr(owner: String, repo: String, prNumber: Int, comment: String) {
+        githubClient.post()
+            .uri("/repos/$owner/$repo/issues/$prNumber/comments")
+            .header(HttpHeaders.ACCEPT, "application/vnd.github+json")
+            .body(mapOf("body" to comment))
+            .retrieve()
+            .toBodilessEntity()
+    }
 }
