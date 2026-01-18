@@ -25,11 +25,16 @@ extra["springAiVersion"] = "1.1.2"
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.ai:spring-ai-starter-model-openai")
+
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.springframework.ai:spring-ai-starter-model-openai")
-    developmentOnly("org.springframework.boot:spring-boot-devtools")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+
     runtimeOnly("com.mysql:mysql-connector-j")
+
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
