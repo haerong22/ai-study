@@ -31,9 +31,6 @@ class CodeReviewWorkflow(
             println("⏱️ [Performance] 전체 처리 시간: ${System.currentTimeMillis() - startTime}ms")
             println("🔍 [System Log] $gradingLog")
 
-            """
-            ## 🤖 AI 코드 리뷰!
-            $reviewResult
-            """.trimIndent()
+            "## 🤖 AI 코드 리뷰!\n\n$reviewResult"
         }
 }

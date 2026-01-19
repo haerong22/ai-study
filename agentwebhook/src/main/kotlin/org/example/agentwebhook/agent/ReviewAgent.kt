@@ -28,13 +28,13 @@ class ReviewAgent(
         - `Fixed Code`에는 학생 코드를 기반으로 수정한 버전을 제시하세요.
         
         [출력 포맷]
-        ** Critical (버그/에러) **
+        ### 🔴 Critical (버그/에러)
         - (치명적인 문제점 설명, 없으면 생략)
-        
-        ** Suggestion (개선 제안) **
+
+        ### 💡 Suggestion (개선 제안)
         - (더 나은 코드 스타일, 변수명, 로직 제안)
-        
-        ** Fixed Code (수정 제안) **
+
+        ### ✅ Fixed Code (수정 제안)
         ```kotlin
         (학생 코드를 리팩토링한 코드)
         ```
