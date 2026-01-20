@@ -27,6 +27,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.ai:spring-ai-starter-model-openai")
 
+    implementation("com.vaadin:vaadin-spring-boot-starter:24.9.9")
+
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
