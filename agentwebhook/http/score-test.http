@@ -1,0 +1,2 @@
+### get student scores
+GET http://localhost:8081/api/scores/haerong22
