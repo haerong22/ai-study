@@ -25,9 +25,7 @@ suspend fun main() {
 
     print("User: ")
     val userPrompt = readln()
-
-    val prompt = prompt(id = "hello-koog") {
-        system("""
+    val systemPrompt = """
             # 역할
             당신은 코딩 에이전트 입니다.
             
@@ -41,7 +39,10 @@ suspend fun main() {
             - [중요]: 도구를 선택할 때, 순수한 JSON 문자열로 출력하세요. 코드블럭 혹은 다른 요소들은 제거하시오.
             - 도구가 필요하지 않은 일반 대화는 그냥 텍스트로 응답하세요.   
            
-        """.trimIndent())
+        """.trimIndent()
+
+    val prompt = prompt(id = "hello-koog") {
+        system(systemPrompt)
         user(userPrompt)
     }
 
@@ -58,7 +59,19 @@ suspend fun main() {
         else -> "알 수 없는 Tool입니다: ${toolCall.tool}"
     }
 
+    val secondPrompt = prompt(id = "second-prompt") {
+        system(systemPrompt)
+        user(userPrompt)
+        assistant(response.first().content)
+        user(toolResult)
+    }
+
+    val finalResult = executor.execute(
+        prompt = secondPrompt,
+        model = OpenAIModels.Chat.GPT5Mini
+    )
+
     println("=============================")
-    println("toolResult: $toolResult")
+    println("finalResult: ${finalResult.first().content}")
     println("=============================")
 }
