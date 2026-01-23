@@ -1,8 +1,13 @@
 package org.example.tools
 
+import ai.koog.agents.core.tools.annotations.LLMDescription
+import ai.koog.agents.core.tools.annotations.Tool
 import org.example.utils.resolveFilePath
 
+@Tool("readFile")
+@LLMDescription("주어진 파일 경로를 받고 파일 내용을 응답하는 도구 입니다.")
 fun readFile(
+    @LLMDescription("읽을 파일의 경로")
     path: String
 ): String {
     require(path.isNotBlank()) { return "파일 경로가 비어있습니다." }
