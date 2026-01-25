@@ -5,6 +5,7 @@ import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.core.tools.reflect.tool
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
+import org.example.tools.listFiles
 import org.example.tools.readFile
 
 suspend fun main() {
@@ -15,6 +16,7 @@ suspend fun main() {
 
     val toolRegistry = ToolRegistry {
         tool(::readFile)
+        tool(::listFiles)
     }
 
     val systemPrompt = "당신은 코딩 에이전트 입니다."
