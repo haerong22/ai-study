@@ -1,0 +1,67 @@
+package org.example.tools
+
+import ai.koog.agents.core.tools.annotations.LLMDescription
+import ai.koog.agents.core.tools.annotations.Tool
+import org.example.utils.resolveFilePath
+
+@Tool("editFile")
+@LLMDescription(
+    """
+    텍스트 교체를 통해 파일을 생성하거나 수정합니다.
+    - 파일이 없고 oldStr이 비어있으면: newStr로 새 파일 생성
+    - 파일이 있고 oldStr이 비어있으면: 파일 끝에 newStr 추가
+    - oldStr이 비어있지 않으면: oldStr을 newStr로 교체
+    """
+)
+fun editFile(
+    @LLMDescription("수정하거나 생성할 파일 경로") path: String,
+    @LLMDescription("찾아서 교체할 문자열") oldStr: String,
+    @LLMDescription("교체할 새 문자열") newStr: String,
+): String {
+    if (oldStr == newStr) return "오류: oldStr, newStr 두 문자열이 동일합니다."
+
+    val file = resolveFilePath(path)
+
+    if (!file.exists()) {
+        return if (oldStr.isEmpty()) {
+            try {
+                file.parentFile.mkdirs()
+                file.writeText(newStr, Charsets.UTF_8)
+                "성공: newStr로 '$path'에 새 파일을 생성했습니다."
+            } catch (e: Exception) {
+                "오류: 파일 생성을 실패했습니다. > ${e.message}"
+            }
+        } else {
+            "오류: 수정 할 파일을 찾을 수 없습니다."
+        }
+    }
+
+    val content = try {
+        file.readText(Charsets.UTF_8)
+    } catch (e: Exception) {
+        return "오류: 파일을 읽을 수 없습니다. > ${e.message}"
+    }
+
+    if (oldStr.isEmpty()) {
+        try {
+            file.appendText(newStr, Charsets.UTF_8)
+            return "성공: 기존 파일에 새 내용을 추가했습니다. : $path"
+        } catch (e: Exception) {
+            return "오류: 파일에 추가를 실패했습니다. > ${e.message}"
+        }
+    }
+
+    val count = content.split(oldStr).size - 1
+    if (count == 0) return "오류: 수정할 문자열을 찾을 수 없습니다."
+    if (count > 1) return "오류: 수정할 문자열이 여러 개 있으므로 교체할 수 없습니다."
+
+    val newContent = content.replace(oldStr, newStr)
+
+    return try {
+        file.writeText(newContent, Charsets.UTF_8)
+        "성공: 파일 '$path'에 내용이 성공적으로 교체되었습니다."
+    } catch (e: Exception) {
+        "오류: 업데이트된 콘텐츠를 쓰는데 실패했습니다. > ${e.message}"
+    }
+
+}
