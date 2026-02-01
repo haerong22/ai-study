@@ -21,6 +21,11 @@ class JsonlConversationHistoryStorage(
         prettyPrint = false
     }
 ) : ConversationHistoryStorage {
+
+    companion object {
+        private const val MAX_MESSAGES = 2
+    }
+
     private val historyFile: Path
         get() = fs.joinPath(sessionDir, "session.jsonl")
 
@@ -67,7 +72,8 @@ class JsonlConversationHistoryStorage(
         }
 
         val content = fs.readText(historyFile)
-        return content.lines()
+
+        val allMessages = content.lines()
             .filter { it.isNotBlank() }
             .mapNotNull {
                 try {
@@ -78,5 +84,7 @@ class JsonlConversationHistoryStorage(
                     null
                 }
             }
+
+        return allMessages.takeLast(MAX_MESSAGES)
     }
 }
