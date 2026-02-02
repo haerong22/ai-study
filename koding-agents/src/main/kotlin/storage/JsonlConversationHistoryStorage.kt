@@ -1,5 +1,8 @@
 package org.example.storage
 
+import ai.koog.prompt.dsl.prompt
+import ai.koog.prompt.executor.model.PromptExecutor
+import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.RequestMetaInfo
 import ai.koog.prompt.message.ResponseMetaInfo
@@ -23,8 +26,12 @@ class JsonlConversationHistoryStorage(
 ) : ConversationHistoryStorage {
 
     companion object {
-        private const val MAX_MESSAGES = 2
+        private const val COMPRESS_THRESHOLD = 4
+        private const val KEEP_RECENT = 2
     }
+
+    private val summaryFile: Path
+        get() = fs.joinPath(sessionDir, "summary.md")
 
     private val historyFile: Path
         get() = fs.joinPath(sessionDir, "session.jsonl")
@@ -67,13 +74,55 @@ class JsonlConversationHistoryStorage(
     }
 
     override suspend fun getHistory(): List<Message> {
+        return loadAllMessages().takeLast(KEEP_RECENT)
+    }
+
+    override suspend fun getSummary(): String? {
+        if (!fs.exists(summaryFile)) return null
+        return fs.readText(summaryFile).ifBlank { null }
+    }
+
+    override suspend fun compressHistory(
+        executor: PromptExecutor,
+        model: LLModel
+    ) {
+        val allMessages = loadAllMessages()
+
+        if (allMessages.size <= COMPRESS_THRESHOLD) return
+
+        val toSummarize = allMessages.dropLast(KEEP_RECENT)
+
+        val conversationText = buildString {
+            getSummary()?.let {
+                appendLine("이전 요약 내용: $it")
+                appendLine()
+            }
+
+            toSummarize.forEach { msg ->
+                when (msg) {
+                    is Message.User -> appendLine("User: ${msg.content}")
+                    is Message.Assistant -> appendLine("Assistant: ${msg.content}")
+                    else -> {}
+                }
+            }
+        }
+
+        val summarizePrompt = prompt("summarize") {
+            system(conversationText)
+            user("이 대화를 간결하게 요약하세요:")
+        }
+
+        val response = executor.execute(summarizePrompt, model)
+
+        fs.writeText(summaryFile, response.first().content)
+    }
+
+    private suspend fun loadAllMessages(): List<Message> {
         if (!fs.exists(historyFile)) {
             return emptyList()
         }
 
-        val content = fs.readText(historyFile)
-
-        val allMessages = content.lines()
+        return fs.readText(historyFile).lines()
             .filter { it.isNotBlank() }
             .mapNotNull {
                 try {
@@ -84,7 +133,5 @@ class JsonlConversationHistoryStorage(
                     null
                 }
             }
-
-        return allMessages.takeLast(MAX_MESSAGES)
     }
 }

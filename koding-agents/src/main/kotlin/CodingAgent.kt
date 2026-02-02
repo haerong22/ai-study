@@ -39,8 +39,11 @@ class CodingAgent(
     }
 
     suspend fun chat(userMessage: String): String {
+        conversationHistoryStorage.compressHistory(executor, model)
+
+        val summary = conversationHistoryStorage.getSummary()
         val history = conversationHistoryStorage.getHistory()
-        val system = buildSystemPromptWithHistory(history)
+        val system = buildSystemPromptWithHistory(summary, history)
 
         val agent = AIAgent(
             promptExecutor = executor,
@@ -56,21 +59,23 @@ class CodingAgent(
         return assistantMessage
     }
 
-    private fun buildSystemPromptWithHistory(history: List<Message>): String {
-        if (history.isEmpty()) {
-            return systemPrompt
-        }
+    private fun buildSystemPromptWithHistory(summary: String?, history: List<Message>): String {
+        if (summary == null && history.isEmpty()) return systemPrompt
 
         return buildString {
             appendLine("# System Prompt")
             appendLine(systemPrompt)
             appendLine()
-            appendLine("# Conversation History")
-            history.forEach {
-                when (it) {
-                    is Message.User -> appendLine("User: ${it.content}")
-                    is Message.Assistant -> appendLine("Assistant: ${it.content}")
-                    else -> {}
+            summary?.let { appendLine("\n# Previous Conversation Summary\n$it") }
+
+            if (history.isNotEmpty()) {
+                appendLine("\n# Recent Conversation")
+                history.forEach {
+                    when (it) {
+                        is Message.User -> appendLine("User: ${it.content}")
+                        is Message.Assistant -> appendLine("Assistant: ${it.content}")
+                        else -> {}
+                    }
                 }
             }
             appendLine()
