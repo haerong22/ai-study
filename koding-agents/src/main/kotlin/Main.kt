@@ -9,20 +9,29 @@ suspend fun main() {
         print("User: ")
         val userPrompt = readln()
 
-        if (userPrompt == "/exit") {
-            println("종료합니다.")
-            break
+        when {
+            userPrompt == "/clear" -> {
+                codingAgent = CodingAgent(apiKey)
+                println("새로운 대화가 시작되었습니다.")
+                continue
+            }
+
+            userPrompt == "/exit" -> {
+                println("종료합니다.")
+                break
+            }
+
+            userPrompt.startsWith("/memory add") -> {
+                val content = userPrompt.removePrefix("/memory add ").trim()
+                codingAgent.addMemory(content)
+                println("메모리에 저장했습니다: $content")
+            }
+
+            else -> {
+                val response = codingAgent.chat(userPrompt)
+
+                println("Assistant: $response")
+            }
         }
-
-        if (userPrompt == "/clear") {
-            codingAgent = CodingAgent(apiKey)
-            println("새로운 대화가 시작되었습니다.")
-            println()
-            continue
-        }
-
-        val response = codingAgent.chat(userPrompt)
-
-        println("Assistant: $response")
     }
 }

@@ -7,8 +7,10 @@ import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import ai.koog.prompt.message.Message
 import ai.koog.rag.base.files.JVMFileSystemProvider
+import org.example.storage.AgentMemoryStorage
 import org.example.storage.ConversationHistoryStorage
 import org.example.storage.JsonlConversationHistoryStorage
+import org.example.storage.KodingMemoryStorage
 import org.example.tools.bash
 import org.example.tools.codeSearch
 import org.example.tools.editFile
@@ -38,12 +40,19 @@ class CodingAgent(
         tool(::codeSearch)
     }
 
+    private val agentMemoryStorage: AgentMemoryStorage = KodingMemoryStorage(
+        fs = JVMFileSystemProvider.ReadWrite,
+    )
+
+    suspend fun addMemory(content: String) = agentMemoryStorage.addMemory(content)
+
     suspend fun chat(userMessage: String): String {
         conversationHistoryStorage.compressHistory(executor, model)
 
+        val memory = agentMemoryStorage.getMemory()
         val summary = conversationHistoryStorage.getSummary()
         val history = conversationHistoryStorage.getHistory()
-        val system = buildSystemPromptWithHistory(summary, history)
+        val system = buildSystemPromptWithHistory(memory, summary, history)
 
         val agent = AIAgent(
             promptExecutor = executor,
@@ -59,17 +68,30 @@ class CodingAgent(
         return assistantMessage
     }
 
-    private fun buildSystemPromptWithHistory(summary: String?, history: List<Message>): String {
-        if (summary == null && history.isEmpty()) return systemPrompt
+    private fun buildSystemPromptWithHistory(memory: String?, summary: String?, history: List<Message>): String {
+        if (summary == null && history.isEmpty() && memory == null) return systemPrompt
 
         return buildString {
             appendLine("# System Prompt")
             appendLine(systemPrompt)
-            appendLine()
-            summary?.let { appendLine("\n# Previous Conversation Summary\n$it") }
+
+            memory?.let {
+                appendLine()
+                appendLine("# Project Memory")
+                appendLine("아래는 이 프로젝트에 대해 기억해야 할 정보입니다.")
+                appendLine(it)
+            }
+
+            summary?.let {
+                appendLine()
+                appendLine("# Previous Conversation Summary")
+                appendLine(it)
+            }
 
             if (history.isNotEmpty()) {
-                appendLine("\n# Recent Conversation")
+                appendLine()
+                appendLine("# Recent Conversation")
+
                 history.forEach {
                     when (it) {
                         is Message.User -> appendLine("User: ${it.content}")
