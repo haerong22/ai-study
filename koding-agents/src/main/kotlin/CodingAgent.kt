@@ -40,7 +40,7 @@ class CodingAgent(
         tool(::codeSearch)
     }
 
-    private val agentMemoryStorage: AgentMemoryStorage = KodingMemoryStorage(
+    val agentMemoryStorage: AgentMemoryStorage = KodingMemoryStorage(
         fs = JVMFileSystemProvider.ReadWrite,
     )
 

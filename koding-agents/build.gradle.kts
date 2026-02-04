@@ -49,3 +49,7 @@ tasks.test {
 tasks.named<JavaExec>("run") {
     standardInput = System.`in`
 }
+
+tasks.withType<JavaExec> {
+    jvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
+}
