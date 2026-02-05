@@ -3,6 +3,7 @@ package org.example
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.core.tools.reflect.tool
+import ai.koog.agents.features.eventHandler.feature.EventHandler
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import ai.koog.prompt.message.Message
@@ -60,6 +61,26 @@ class CodingAgent(
             toolRegistry = toolRegistry,
             maxIterations = 50,
             llmModel = model,
+            installFeatures = {
+                install(EventHandler) {
+                    onToolCallStarting {
+                        println()
+                        println("\u001B[34m🔧 도구 호출중: ${it.toolName}\u001B[0m")
+                        println("${it.toolArgs}")
+                        it.toolName
+                    }
+
+                    onToolCallCompleted {
+                        println("\u001B[32m✅ 도구 완료: ${it.toolName}\u001B[0m")
+                        it.toolName
+                    }
+
+                    onToolCallFailed {
+                        println("\u001B[31m❌ 도구 호출 실패: ${it.toolName}\u001B[0m")
+                        it.toolName
+                    }
+                }
+            }
         )
 
         val assistantMessage = agent.run(userMessage)
