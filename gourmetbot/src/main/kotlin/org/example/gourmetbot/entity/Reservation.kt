@@ -19,11 +19,22 @@ class Reservation(
     @ManyToOne(fetch = FetchType.LAZY)
     val restaurantTable: RestaurantTable,
     val partySize: Int,
-    val allergies: String,
-    @Enumerated(EnumType.STRING)
-    val status: ReservationStatus,
-    val specialRequests: String,
+    val allergies: String?,
+    val specialRequests: String?,
 ) {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
+
+    @Enumerated(EnumType.STRING)
+    var status: ReservationStatus = ReservationStatus.CONFIRMED
+
+    val formattedTime: String
+        get() = "${reservationTime.toLocalDate()} ${reservationTime.toLocalTime()}"
+
+    fun isCancellableBy(phone: String): Boolean =
+        customer.phoneNumber == phone && reservationTime.isAfter(LocalDateTime.now())
+
+    fun cancel() {
+        status = ReservationStatus.CANCELLED
+    }
 }

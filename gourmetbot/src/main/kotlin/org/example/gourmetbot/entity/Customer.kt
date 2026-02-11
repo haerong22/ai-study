@@ -9,9 +9,13 @@ import jakarta.persistence.Id
 class Customer(
     val phoneNumber: String,
     val name: String,
-    val visitCount: Int,
+    var visitCount: Int,
     val memo: String?,
 ) {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
+
+    fun visit() {
+        visitCount++
+    }
 }
