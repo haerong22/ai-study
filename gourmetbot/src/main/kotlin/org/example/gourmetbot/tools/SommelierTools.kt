@@ -8,7 +8,7 @@ import org.springframework.ai.vectorstore.VectorStore
 import org.springframework.stereotype.Component
 
 @Component
-class OrderTools(
+class SommelierTools(
     private val orderService: OrderService,
     private val vectorStore: VectorStore,
 ) {
