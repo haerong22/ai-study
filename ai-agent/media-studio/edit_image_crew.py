@@ -1,6 +1,8 @@
 import os
 import replicate
 import requests
+from datetime import datetime
+from pathlib import Path
 from crewai import Crew, Agent, Task
 from crewai.project import CrewBase, task, agent, crew
 from env import GEMINI_API_KEY
@@ -89,32 +91,105 @@ class EditImagePromptMakerCrew:
         )
 
 
-def edit_image_from_url(image_url, edit_requet):
+class EditImageService:
+    def __init__(self, replicate_api_token):
 
-    try:
+        self.replicate_api_token = replicate_api_token
+        self.images_folder = Path("generated_images")
+        self.images_folder.mkdir(exist_ok=True)
 
-        edit_prompt_crew = EditImagePromptMakerCrew().crew()
-        enhanced_prompt = edit_prompt_crew.kickoff(
-            inputs={"edit_request": edit_requet}
-        ).raw
+    def edit_image(self, image_path, edit_request):
+        try:
+            if not os.path.exists(image_path):
+                raise FileNotFoundError(f"Image file not found: {image_path}")
 
-        output = replicate.run(
-            "google/nano-banana",
-            input={
-                "prompt": enhanced_prompt,
-                "image_input": [image_url],
-                "output_format": "png",
-            },
-        )
+            edit_prompt_crew = EditImagePromptMakerCrew().crew()
+            enhanced_prompt = edit_prompt_crew.kickoff(
+                inputs={"edit_request": edit_request}
+            ).raw
 
-        print(output)
+            image_url = open(image_path, "rb")
 
-    except Exception as e:
-        print(f"Error editing image from URL: {str(e)}")
-        raise e
+            output = replicate.run(
+                "google/nano-banana",
+                input={
+                    "prompt": enhanced_prompt,
+                    "image_input": [image_url],
+                    "output_format": "png",
+                },
+            )
 
+            edited_image_filename = self._download_image(str(output), "edited")
 
-edit_image_from_url(
-    "https://replicate.delivery/xezq/qSpb5y13EY56IdlhbuV7SaJBssYLOXGHK7Tfk5nPFfbsLNgVA/tmpso4k6npg.jpg",
-    "이미지의 바다색을 노란색으로 변경해줘",
-)
+            return edited_image_filename
+
+        except Exception as e:
+            print(f"Error editing image: {str(e)}")
+            raise e
+
+    def edit_image_from_url(self, image_url, edit_request):
+
+        try:
+            edit_prompt_crew = EditImagePromptMakerCrew().crew()
+            enhanced_prompt = edit_prompt_crew.kickoff(
+                inputs={"edit_request": edit_request}
+            ).raw
+
+            output = replicate.run(
+                "google/nano-banana",
+                input={
+                    "prompt": enhanced_prompt,
+                    "image_input": [image_url],
+                    "output_format": "png",
+                },
+            )
+
+            edited_image_filename = self._download_image(str(output), "edited")
+
+            return edited_image_filename
+
+        except Exception as e:
+            print(f"Error editing image from URL: {str(e)}")
+            raise e
+
+    def _download_image(self, url, prefix="image"):
+
+        try:
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{prefix}_{timestamp}.png"
+            filepath = self.images_folder / filename
+
+            with open(filepath, "wb") as f:
+                f.write(response.content)
+
+            return str(filepath)
+
+        except Exception as e:
+            print(f"Error downloading image: {str(e)}")
+            raise e
+
+    def download_telegram_image(self, file_url, bot_token):
+
+        try:
+            if file_url.startswith("https://"):
+                full_url = file_url
+            else:
+                full_url = f"https://api.telegram.org/file/bot{bot_token}/{file_url}"
+
+            response = requests.get(full_url, timeout=30)
+            response.raise_for_status()
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"telegram_input_{timestamp}.png"
+            filepath = self.images_folder / filename
+
+            with open(filepath, "wb") as f:
+                f.write(response.content)
+
+            return str(filepath)
+
+        except Exception as e:
+            raise e

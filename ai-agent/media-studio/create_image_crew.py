@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 import requests
+from pathlib import Path
 from crewai import Crew, Agent, Task
 from crewai.project import CrewBase, task, agent, crew
 import replicate
@@ -11,7 +12,7 @@ os.environ["GEMINI_API_KEY"] = GEMINI_API_KEY
 
 
 @CrewBase
-class PromptMakerCrew:
+class CreateImagePromptMakerCrew:
 
     @agent
     def prompt_maker_agent(self) -> Agent:
@@ -82,40 +83,58 @@ class PromptMakerCrew:
         )
 
 
-def create_image(message: str, model: str = "google/imagen-4-fast"):
-    prompt_maker_crew = PromptMakerCrew().crew()
+class CreateImageService:
 
-    prompt = prompt_maker_crew.kickoff(inputs={"message": message}).raw
+    def __init__(self, replicate_api_token):
 
-    output = replicate.run(
-        "google/imagen-4-fast",
-        input={
-            "prompt": prompt,
-            "aspect_ratio": "4:3",
-            "output_format": "jpg",
-            "safety_filter_level": "block_only_high",
-        },
-    )
+        self.replicate_api_token = replicate_api_token
+        self.images_folder = Path("generated_images")
+        self.images_folder.mkdir(exist_ok=True)
 
-    print(output)
-
-    if output:
-        current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"generated_image_{current_time}.jpg"
-
+    def create_image(self, message: str):
         try:
-            response = requests.get(str(output))
 
-            with open(filename, "wb") as f:
-                f.write(response.content)
+            prompt_maker_crew = CreateImagePromptMakerCrew().crew()
+            enhanced_prompt = prompt_maker_crew.kickoff(inputs={"message": message}).raw
 
-            print(f"이미지가 저장되었습니다: {filename}")
+            output = replicate.run(
+                "google/imagen-4-fast",
+                input={
+                    "prompt": enhanced_prompt,
+                    "aspect_ratio": "4:3",
+                    "output_format": "jpg",
+                    "safety_filter_level": "block_only_high",
+                },
+            )
+
+            image_filename = self._download_image(str(output), "created")
+
+            return image_filename
 
         except Exception as e:
-            print(f"이미지 저장 중 오류 발생: {e}")
+            print(f"Error creating image: {str(e)}")
+            raise e
 
-    else:
-        print("이미지 생성에 실패했습니다.")
+    def _download_image(self, url, prefix="image"):
+        try:
+            response = requests.get(url)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{prefix}_{timestamp}.png"
+            filepath = self.images_folder / filename
 
+            with open(filepath, "wb") as f:
+                f.write(response.content)
 
-create_image("해변에 앉아있는 밀집모자 해적단")
+            return str(filepath)
+
+        except Exception as e:
+            print(f"Error downloading image: {str(e)}")
+            raise e
+
+    def cleanup_images(self, image_paths):
+        for image_path in image_paths:
+            try:
+                if os.path.exists(image_path):
+                    os.remove(image_path)
+            except Exception as e:
+                print(f"Error removing {image_path}: {str(e)}")
