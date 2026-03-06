@@ -16,13 +16,14 @@ async def async_chat(
     user_id="default_user",
     session_id="default_session",
     app_name="default_app",
+    state={},
 ):
 
     result = ""
 
     # 세션 생성
     await session_service.create_session(
-        app_name=app_name, user_id=user_id, session_id=session_id
+        app_name=app_name, user_id=user_id, session_id=session_id, state=state
     )
 
     # ADK Runner를 사용해서 agent랑 대화
@@ -49,5 +50,6 @@ def chat(
     user_id="default_user",
     session_id="default_session",
     app_name="default_app",
+    state={},
 ):
-    return asyncio.run(async_chat(message, agent, user_id, session_id, app_name))
+    return asyncio.run(async_chat(message, agent, user_id, session_id, app_name, state))
