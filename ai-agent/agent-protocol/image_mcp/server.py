@@ -15,3 +15,22 @@ def get_image_info(image_path: str) -> dict:
         Dictionary with image information (width, height, format, mode, size)
     """
     return tools.get_image_info(image_path)
+
+@mcp.tool()
+def resize_image(
+    image_path: str, width: int, height: int, output_path: str | None = None
+) -> dict:
+    """
+    Resize an image to specified dimensions.
+
+    Args:
+        image_path: Path to the input image
+        width: Target width in pixels
+        height: Target height in pixels
+        output_path: Path to save resized image (optional)
+
+    Returns:
+        Dictionary with operation result
+    """
+
+    return tools.resize_image(image_path, width, height, output_path)
