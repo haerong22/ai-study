@@ -27,6 +27,7 @@ def get_image_info(image_path: str) -> dict:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
+
 def resize_image(
     image_path: str, width: int, height: int, output_path: Optional[str] = None
 ) -> dict:
@@ -58,6 +59,44 @@ def resize_image(
                 "output": output_path,
                 "original_size": f"{img.width}x{img.height}",
                 "new_size": f"{width}x{height}",
+            }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    
+
+def convert_format(
+    image_path: str, target_format: str, output_path: Optional[str] = None
+) -> dict:
+    """
+    Convert image to a different format.
+
+    Args:
+        image_path: Path to the input image
+        target_format: Target format (e.g., 'JPEG', 'PNG', 'WEBP')
+        output_path: Path to save converted image (optional)
+
+    Returns:
+        Dictionary with operation result
+    """
+    try:
+        with Image.open(image_path) as img:
+            # Convert RGBA to RGB for JPEG
+            if target_format.upper() == "JPEG" and img.mode == "RGBA":
+                img = img.convert("RGB")
+
+            if output_path is None:
+                path = Path(image_path)
+                ext = "." + target_format.lower().replace("jpeg", "jpg")
+                output_path = str(path.parent / f"{path.stem}_converted{ext}")
+
+            img.save(output_path, format=target_format.upper())
+
+            return {
+                "success": True,
+                "input": image_path,
+                "output": output_path,
+                "original_format": img.format,
+                "new_format": target_format.upper(),
             }
     except Exception as e:
         return {"success": False, "error": str(e)}

@@ -16,6 +16,7 @@ def get_image_info(image_path: str) -> dict:
     """
     return tools.get_image_info(image_path)
 
+
 @mcp.tool()
 def resize_image(
     image_path: str, width: int, height: int, output_path: str | None = None
@@ -34,3 +35,21 @@ def resize_image(
     """
 
     return tools.resize_image(image_path, width, height, output_path)
+
+
+@mcp.tool()
+def convert_format(
+    image_path: str, target_format: str, output_path: str | None = None
+) -> dict:
+    """
+    Convert image to a different format.
+
+    Args:
+        image_path: Path to the input image
+        target_format: Target format (e.g., 'JPEG', 'PNG', 'WEBP')
+        output_path: Path to save converted image (optional)
+
+    Returns:
+        Dictionary with operation result
+    """
+    return tools.convert_format(image_path, target_format, output_path)
