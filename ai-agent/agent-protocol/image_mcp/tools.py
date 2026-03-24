@@ -100,3 +100,37 @@ def convert_format(
             }
     except Exception as e:
         return {"success": False, "error": str(e)}
+    
+
+def rotate_image(
+    image_path: str, degrees: float, output_path: Optional[str] = None
+) -> dict:
+    """
+    Rotate an image by specified degrees.
+
+    Args:
+        image_path: Path to the input image
+        degrees: Rotation angle in degrees (counter-clockwise)
+        output_path: Path to save rotated image (optional)
+
+    Returns:
+        Dictionary with operation result
+    """
+    try:
+        with Image.open(image_path) as img:
+            rotated = img.rotate(degrees, expand=True)
+
+            if output_path is None:
+                path = Path(image_path)
+                output_path = str(path.parent / f"{path.stem}_rotated{path.suffix}")
+
+            rotated.save(output_path)
+
+            return {
+                "success": True,
+                "input": image_path,
+                "output": output_path,
+                "rotation": f"{degrees}°",
+            }
+    except Exception as e:
+        return {"success": False, "error": str(e)}

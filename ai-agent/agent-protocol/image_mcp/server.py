@@ -53,3 +53,21 @@ def convert_format(
         Dictionary with operation result
     """
     return tools.convert_format(image_path, target_format, output_path)
+
+
+@mcp.tool()
+def rotate_image(
+    image_path: str, degrees: float, output_path: str | None = None
+) -> dict:
+    """
+    Rotate an image by specified degrees (counter-clockwise).
+
+    Args:
+        image_path: Path to the input image
+        degrees: Rotation angle in degrees
+        output_path: Path to save rotated image (optional)
+
+    Returns:
+        Dictionary with operation result
+    """
+    return tools.rotate_image(image_path, degrees, output_path)
