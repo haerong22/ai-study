@@ -71,3 +71,29 @@ def rotate_image(
         Dictionary with operation result
     """
     return tools.rotate_image(image_path, degrees, output_path)
+
+
+@mcp.tool()
+def crop_image(
+    image_path: str,
+    left: int,
+    top: int,
+    right: int,
+    bottom: int,
+    output_path: str | None = None,
+) -> dict:
+    """
+    Crop an image to specified coordinates.
+
+    Args:
+        image_path: Path to the input image
+        left: Left coordinate
+        top: Top coordinate
+        right: Right coordinate
+        bottom: Bottom coordinate
+        output_path: Path to save cropped image (optional)
+
+    Returns:
+        Dictionary with operation result
+    """
+    return tools.crop_image(image_path, left, top, right, bottom, output_path)

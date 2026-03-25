@@ -134,3 +134,46 @@ def rotate_image(
             }
     except Exception as e:
         return {"success": False, "error": str(e)}
+    
+
+def crop_image(
+    image_path: str,
+    left: int,
+    top: int,
+    right: int,
+    bottom: int,
+    output_path: Optional[str] = None,
+) -> dict:
+    """
+    Crop an image to specified coordinates.
+
+    Args:
+        image_path: Path to the input image
+        left: Left coordinate
+        top: Top coordinate
+        right: Right coordinate
+        bottom: Bottom coordinate
+        output_path: Path to save cropped image (optional)
+
+    Returns:
+        Dictionary with operation result
+    """
+    try:
+        with Image.open(image_path) as img:
+            cropped = img.crop((left, top, right, bottom))
+
+            if output_path is None:
+                path = Path(image_path)
+                output_path = str(path.parent / f"{path.stem}_cropped{path.suffix}")
+
+            cropped.save(output_path)
+
+            return {
+                "success": True,
+                "input": image_path,
+                "output": output_path,
+                "original_size": f"{img.width}x{img.height}",
+                "cropped_size": f"{right-left}x{bottom-top}",
+            }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
