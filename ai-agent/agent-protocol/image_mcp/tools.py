@@ -177,3 +177,55 @@ def crop_image(
             }
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+def apply_filter(
+    image_path: str, filter_type: str, output_path: Optional[str] = None
+) -> dict:
+    """
+    Apply a filter to an image.
+
+    Args:
+        image_path: Path to the input image
+        filter_type: Type of filter ('blur', 'sharpen', 'grayscale', 'contour', 'detail', 'edge_enhance')
+        output_path: Path to save filtered image (optional)
+
+    Returns:
+        Dictionary with operation result
+    """
+    try:
+        with Image.open(image_path) as img:
+            if filter_type.lower() == "grayscale":
+                filtered = img.convert("L")
+            elif filter_type.lower() == "blur":
+                filtered = img.filter(ImageFilter.BLUR)
+            elif filter_type.lower() == "sharpen":
+                filtered = img.filter(ImageFilter.SHARPEN)
+            elif filter_type.lower() == "contour":
+                filtered = img.filter(ImageFilter.CONTOUR)
+            elif filter_type.lower() == "detail":
+                filtered = img.filter(ImageFilter.DETAIL)
+            elif filter_type.lower() == "edge_enhance":
+                filtered = img.filter(ImageFilter.EDGE_ENHANCE)
+            else:
+                return {
+                    "success": False,
+                    "error": f"Unknown filter type: {filter_type}",
+                }
+
+            if output_path is None:
+                path = Path(image_path)
+                output_path = str(
+                    path.parent / f"{path.stem}_{filter_type}{path.suffix}"
+                )
+
+            filtered.save(output_path)
+
+            return {
+                "success": True,
+                "input": image_path,
+                "output": output_path,
+                "filter": filter_type,
+            }
+    except Exception as e:
+        return {"success": False, "error": str(e)}

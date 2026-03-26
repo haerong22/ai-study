@@ -97,3 +97,21 @@ def crop_image(
         Dictionary with operation result
     """
     return tools.crop_image(image_path, left, top, right, bottom, output_path)
+
+
+@mcp.tool()
+def apply_filter(
+    image_path: str, filter_type: str, output_path: str | None = None
+) -> dict:
+    """
+    Apply a filter to an image.
+
+    Args:
+        image_path: Path to the input image
+        filter_type: Type of filter (blur, sharpen, grayscale, contour, detail, edge_enhance)
+        output_path: Path to save filtered image (optional)
+
+    Returns:
+        Dictionary with operation result
+    """
+    return tools.apply_filter(image_path, filter_type, output_path)
