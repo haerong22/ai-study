@@ -115,3 +115,21 @@ def apply_filter(
         Dictionary with operation result
     """
     return tools.apply_filter(image_path, filter_type, output_path)
+
+
+@mcp.tool()
+def create_thumbnail(
+    image_path: str, max_size: int = 128, output_path: str | None = None
+) -> dict:
+    """
+    Create a thumbnail of an image.
+
+    Args:
+        image_path: Path to the input image
+        max_size: Maximum size for width or height (default 128)
+        output_path: Path to save thumbnail (optional)
+
+    Returns:
+        Dictionary with operation result
+    """
+    return tools.create_thumbnail(image_path, max_size, output_path)

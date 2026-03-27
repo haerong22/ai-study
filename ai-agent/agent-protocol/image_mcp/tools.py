@@ -229,3 +229,37 @@ def apply_filter(
             }
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+def create_thumbnail(
+    image_path: str, max_size: int = 128, output_path: Optional[str] = None
+) -> dict:
+    """
+    Create a thumbnail of an image.
+
+    Args:
+        image_path: Path to the input image
+        max_size: Maximum size for width or height (default 128)
+        output_path: Path to save thumbnail (optional)
+
+    Returns:
+        Dictionary with operation result
+    """
+    try:
+        with Image.open(image_path) as img:
+            img.thumbnail((max_size, max_size))
+
+            if output_path is None:
+                path = Path(image_path)
+                output_path = str(path.parent / f"{path.stem}_thumb{path.suffix}")
+
+            img.save(output_path)
+
+            return {
+                "success": True,
+                "input": image_path,
+                "output": output_path,
+                "thumbnail_size": f"{img.width}x{img.height}",
+            }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
